@@ -67,10 +67,10 @@
 <body>
     <div id="app" class="min-h-screen flex flex-col h-screen overflow-hidden" v-cloak>
         
-        <!-- Header / Navigation (No Print) -->
+        <!-- Header / Navigation -->
         <header class="bg-emerald-800 text-white shadow-lg no-print z-10">
             <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center gap-2 sm:gap-3 cursor-pointer" @click="switchTab('dashboard')">
                     <img src="https://lh3.googleusercontent.com/d/1hRTEPPOA7fBw8O9k6Wz2mYStk1fEpF81" alt="Logo MI WB Ngares" 
                          onerror="this.onerror=null; this.src='https://placehold.co/100x100/047857/ffffff?text=MI';"
                          class="w-10 h-10 sm:w-12 sm:h-12 object-cover object-center rounded-full border-2 border-white shadow-sm bg-white">
@@ -80,9 +80,9 @@
                     </div>
                 </div>
                 <nav class="hidden md:flex gap-6 items-center">
-                    <button @click="currentTab = 'dashboard'" :class="{'border-b-2 border-white': currentTab === 'dashboard'}" class="pb-1 hover:text-emerald-200 transition">Dashboard</button>
-                    <button @click="currentTab = 'keluarga'" :class="{'border-b-2 border-white': currentTab === 'keluarga'}" class="pb-1 hover:text-emerald-200 transition">Dana Keluarga</button>
-                    <button @click="currentTab = 'umum'" :class="{'border-b-2 border-white': currentTab === 'umum'}" class="pb-1 hover:text-emerald-200 transition">Dana Alumni & Umum</button>
+                    <button @click="switchTab('dashboard')" :class="{'border-b-2 border-white': currentTab === 'dashboard'}" class="pb-1 hover:text-emerald-200 transition">Dashboard</button>
+                    <button @click="switchTab('keluarga')" :class="{'border-b-2 border-white': currentTab === 'keluarga'}" class="pb-1 hover:text-emerald-200 transition">Dana Keluarga</button>
+                    <button @click="switchTab('umum')" :class="{'border-b-2 border-white': currentTab === 'umum'}" class="pb-1 hover:text-emerald-200 transition">Dana Alumni & Umum</button>
                     
                     <button v-if="!isAdmin" @click="showLoginModal = true" class="bg-gray-900 hover:bg-black px-4 py-1.5 rounded-lg text-sm transition text-white shadow-md border border-gray-700 ml-4 font-semibold tracking-wide flex items-center gap-2">
                         <i class="fa-solid fa-lock text-xs text-amber-400"></i> Login Admin
@@ -125,7 +125,6 @@
 
             <div v-show="currentTab === 'dashboard'" class="max-w-6xl mx-auto no-print space-y-6">
                 
-                <!-- Judul Utama & Pengaturan Target -->
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 sm:mt-2">
                     <div class="text-center sm:text-left w-full">
                         <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight">Sistem Informasi Penggalangan Dana</h2>
@@ -151,7 +150,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition group" @click="currentTab = 'keluarga'">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition group" @click="switchTab('keluarga')">
                         <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 text-xl group-hover:scale-105 transition">
                             <i class="fa-solid fa-users-line"></i>
                         </div>
@@ -162,7 +161,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition group" @click="currentTab = 'umum'">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition group" @click="switchTab('umum')">
                         <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 text-xl group-hover:scale-105 transition">
                             <i class="fa-solid fa-globe"></i>
                         </div>
@@ -190,7 +189,7 @@
                     <p class="text-xs text-right text-gray-500 font-medium">Kekurangan: {{ formatRupiah(Math.max(0, displayTarget - displayTotalAll)) }}</p>
                 </div>
 
-                <!-- Pusat Informasi & Dokumen (Google Drive Links) -->
+                <!-- Informasi & Dokumen -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 text-sm sm:text-base">Informasi & Dokumen</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -211,7 +210,7 @@
 
                 <!-- Recent Transactions -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 text-sm sm:text-base">Transaksi Terbaru</h3>
+                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 text-sm sm:text-base">Riwayat Transaksi</h3>
                     <div v-if="recentDonations.length === 0" class="text-center text-gray-500 py-6 italic text-sm">
                         Belum ada data donasi tercatat.
                     </div>
@@ -659,7 +658,7 @@
         </main>
     </div>
 
-    <!-- Integrasi Database Cloud Firebase (Real-Time) -->
+    <!-- Integrasi Database Cloud Firebase & History API -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -676,7 +675,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const { createApp, ref, computed, onMounted, watch } = Vue;
+        const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
 
         createApp({
             setup() {
@@ -735,6 +734,15 @@
                 const switchTab = (tab) => {
                     currentTab.value = tab;
                     mobileMenuOpen.value = false;
+                    window.history.pushState({ tab }, '', `#${tab}`);
+                };
+
+                const handlePopState = (event) => {
+                    if (event.state && event.state.tab) {
+                        currentTab.value = event.state.tab;
+                    } else {
+                        currentTab.value = 'dashboard';
+                    }
                 };
 
                 const formatRupiah = (number) => {
@@ -807,11 +815,11 @@
                     return percent > 100 ? 100 : Math.round(percent * 10) / 10;
                 });
 
-                watch(totalDanaKeluarga, (newVal) => animateNumber(displayTotalKeluarga, newVal));
-                watch(totalDanaUmum, (newVal) => animateNumber(displayTotalUmum, newVal));
-                watch(() => totalDanaKeluarga.value + totalDanaUmum.value, (newVal) => animateNumber(displayTotalAll, newVal));
-                watch(progressPercentage, (newVal) => animateNumber(displayProgress, newVal));
-                watch(targetDana, (newVal) => animateNumber(displayTarget, newVal));
+                Vue.watch(totalDanaKeluarga, (newVal) => animateNumber(displayTotalKeluarga, newVal));
+                Vue.watch(totalDanaUmum, (newVal) => animateNumber(displayTotalUmum, newVal));
+                Vue.watch(() => totalDanaKeluarga.value + totalDanaUmum.value, (newVal) => animateNumber(displayTotalAll, newVal));
+                Vue.watch(progressPercentage, (newVal) => animateNumber(displayProgress, newVal));
+                Vue.watch(targetDana, (newVal) => animateNumber(displayTarget, newVal));
 
                 const recentDonations = computed(() => {
                     const combined = [
@@ -827,8 +835,7 @@
                         }))
                     ];
                     return combined
-                        .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal) || Number(b.id) - Number(b.id))
-                        .slice(0, 5);
+                        .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal) || Number(b.id) - Number(b.id));
                 });
 
                 const filteredKeluarga = computed(() => {
@@ -997,6 +1004,10 @@
                 };
 
                 onMounted(() => {
+                    // Initialize browser history state
+                    window.history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
+                    window.addEventListener('popstate', handlePopState);
+
                     if (sessionStorage.getItem('rkb_is_admin') === 'true') {
                         isAdmin.value = true;
                         subTabKeluarga.value = 'individu';
@@ -1042,6 +1053,10 @@
                         animateNumber(displayTotalAll, totalDanaKeluarga.value + totalDanaUmum.value);
                         animateNumber(displayProgress, progressPercentage.value);
                     }, 400);
+                });
+
+                onUnmounted(() => {
+                    window.removeEventListener('popstate', handlePopState);
                 });
 
                 const printPage = () => {

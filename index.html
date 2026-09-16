@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Informasi Donasi RKB MI WB Ngares</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Custom Scrollbar for tables */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Print Styles */
+        @media print {
+            body { background-color: white; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .shadow-md { box-shadow: none !important; }
+            .rounded-lg { border-radius: 0 !important; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+            .print-header { text-align: center; margin-bottom: 20px; }
+            .print-header h1 { font-size: 18pt; font-weight: bold; margin: 0; }
+            .print-header h2 { font-size: 14pt; margin: 5px 0 0 0; }
+            .print-header p { font-size: 10pt; margin: 5px 0; }
+        }
+        
+        .print-only { display: none; }
+        
+        /* Transition for Vue */
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col h-screen overflow-hidden">
+        
+        <!-- Header / Navigation (No Print) -->
+        <header class="bg-emerald-800 text-white shadow-lg no-print z-10">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Logo MI WB Ngares - Menggunakan lh3.googleusercontent.com agar tidak diblokir -->
+                    <img src="https://lh3.googleusercontent.com/d/1hRTEPPOA7fBw8O9k6Wz2mYStk1fEpF81" alt="Logo MI WB Ngares" 
+                         onerror="this.onerror=null; this.src='https://placehold.co/100x100/047857/ffffff?text=MI';"
+                         class="w-10 h-10 sm:w-12 sm:h-12 object-cover object-center rounded-full border-2 border-white shadow-sm bg-white">
+                    <div>
+                        <h1 class="font-bold text-base sm:text-lg leading-tight">Penggalangan Dana RKB</h1>
+                        <p class="text-emerald-200 text-[10px] sm:text-xs">MI WB Ngares, Trenggalek</p>
+                    </div>
+                </div>
+                <nav class="hidden md:flex gap-6">
+                    <button @click="currentTab = 'dashboard'" :class="{'border-b-2 border-white': currentTab === 'dashboard'}" class="pb-1 hover:text-emerald-200 transition">Dashboard</button>
+                    <button @click="currentTab = 'keluarga'" :class="{'border-b-2 border-white': currentTab === 'keluarga'}" class="pb-1 hover:text-emerald-200 transition">Dana Keluarga</button>
+                    <button @click="currentTab = 'umum'" :class="{'border-b-2 border-white': currentTab === 'umum'}" class="pb-1 hover:text-emerald-200 transition">Dana Alumni/Umum</button>
+                    
+                    <!-- Admin Toggle -->
+                    <button v-if="!isAdmin" @click="showLoginModal = true" class="bg-gray-800 hover:bg-gray-900 px-3 py-1 rounded text-sm transition text-white shadow-sm border border-gray-700 ml-4">
+                        <i class="fa-solid fa-lock text-xs mr-1"></i> Admin
+                    </button>
+                    <button v-else @click="logoutAdmin" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition text-white ml-4 shadow-md border border-red-500">
+                        <i class="fa-solid fa-unlock text-xs mr-1"></i> Logout
+                    </button>
+                </nav>
+                <!-- Mobile Menu Button -->
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-white focus:outline-none">
+                    <i class="fa-solid fa-bars text-2xl"></i>
+                </button>
+            </div>
+            
+            <!-- Mobile Navigation -->
+            <div v-show="mobileMenuOpen" class="md:hidden bg-emerald-700 px-4 pt-2 pb-4 space-y-2 shadow-inner">
+                <button @click="switchTab('dashboard')" class="block w-full text-left py-2 px-3 rounded" :class="{'bg-emerald-800 font-semibold': currentTab === 'dashboard'}">Dashboard</button>
+                <button @click="switchTab('keluarga')" class="block w-full text-left py-2 px-3 rounded" :class="{'bg-emerald-800 font-semibold': currentTab === 'keluarga'}">Dana Keluarga</button>
+                <button @click="switchTab('umum')" class="block w-full text-left py-2 px-3 rounded" :class="{'bg-emerald-800 font-semibold': currentTab === 'umum'}">Dana Alumni & Umum</button>
+                
+                <hr class="border-emerald-600 my-2">
+                <button v-if="!isAdmin" @click="showLoginModal = true; mobileMenuOpen = false" class="block w-full text-left py-2 px-3 rounded bg-gray-800 text-white font-medium shadow-sm border border-gray-700">
+                    <i class="fa-solid fa-lock mr-2 text-sm"></i> Login Admin
+                </button>
+                <button v-else @click="logoutAdmin(); mobileMenuOpen = false" class="block w-full text-left py-2 px-3 rounded bg-red-600 text-white font-medium shadow-sm border border-red-500">
+                    <i class="fa-solid fa-unlock mr-2 text-sm"></i> Logout Admin
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
+            
+            <!-- Toast Notification -->
+            <transition name="fade">
+                <div v-if="toast.show" class="fixed top-20 right-4 z-50 rounded shadow-lg px-4 py-3 flex items-center gap-3 no-print" :class="toast.type === 'success' ? 'bg-green-100 border-l-4 border-green-500 text-green-700' : 'bg-red-100 border-l-4 border-red-500 text-red-700'">
+                    <i class="fa-solid" :class="toast.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
+                    <p class="font-medium">{{ toast.message }}</p>
+                </div>
+            </transition>
+
+            <div v-show="currentTab === 'dashboard'" class="max-w-6xl mx-auto no-print space-y-6">
+                
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="text-center sm:text-left w-full">
+                        <h2 class="text-2xl font-bold text-gray-800">Sistem Informasi Penggalangan Dana</h2>
+                        <p class="text-gray-500 text-sm mt-1">Pembangunan Ruang Kelas Baru (RKB) MI WB Ngares</p>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto justify-center sm:justify-end">
+                         <button v-if="isAdmin" @click="showSettingsModal = true" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded shadow transition text-sm flex items-center gap-2 border border-gray-300">
+                            <i class="fa-solid fa-cog"></i> Pengaturan Target
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Total Dana -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 rounded-full opacity-50"></div>
+                        <div class="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-2xl z-10">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <div class="z-10">
+                            <p class="text-sm text-gray-500 font-medium mb-1">Total Dana Terkumpul</p>
+                            <h3 class="text-2xl sm:text-3xl font-bold text-gray-800">{{ formatRupiah(displayTotalAll) }}</h3>
+                        </div>
+                    </div>
+
+                    <!-- Dana Keluarga -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition" @click="currentTab = 'keluarga'">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl">
+                            <i class="fa-solid fa-users-line"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium mb-1">Dari Keluarga</p>
+                            <h3 class="text-xl font-bold text-gray-800">{{ formatRupiah(displayTotalKeluarga) }}</h3>
+                            <p class="text-xs text-blue-600 font-medium">{{ donationsKeluarga.length }} Donatur</p>
+                        </div>
+                    </div>
+
+                    <!-- Dana Umum -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition" @click="currentTab = 'umum'">
+                        <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-xl">
+                            <i class="fa-solid fa-globe"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium mb-1">Dari Alumni/Umum</p>
+                            <h3 class="text-xl font-bold text-gray-800">{{ formatRupiah(displayTotalUmum) }}</h3>
+                            <p class="text-xs text-amber-600 font-medium">{{ donationsUmum.length }} Donatur</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex justify-between items-end mb-2 gap-2">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-semibold text-gray-700 leading-tight">Progres Dana Pembangunan RKB</h3>
+                            <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5">Target: {{ formatRupiah(targetDana) }}</p>
+                        </div>
+                        <span class="text-base sm:text-lg font-bold text-emerald-600 whitespace-nowrap">{{ displayProgress.toFixed(1) }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2 overflow-hidden shadow-inner">
+                        <div class="bg-emerald-500 h-4 rounded-full transition-all duration-1000 ease-out flex items-center justify-end pr-2" :style="{ width: displayProgress + '%' }">
+                            <div class="w-2 h-2 bg-white rounded-full opacity-70 animate-pulse"></div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-right text-gray-500">Kekurangan: {{ formatRupiah(Math.max(0, targetDana - displayTotalAll)) }}</p>
+                </div>
+
+                <!-- Pusat Informasi & Dokumen -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="font-semibold text-gray-700 mb-4 border-b pb-2">Informasi & Dokumen</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <!-- Link Google Drive untuk Info Rekening -->
+                        <a href="https://drive.google.com/drive/folders/1muDv9rno-raWahhkXPlB73pw1Bo8EYZG" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 py-3 px-4 rounded-lg transition font-medium text-sm shadow-sm">
+                            <i class="fa-solid fa-money-check-dollar text-lg"></i> Info Rekening
+                        </a>
+                        
+                        <!-- Tautan Drive Proposal -->
+                        <a href="https://drive.google.com/drive/folders/1oc-svar38DlfU1zEjq7KBfgXaLe-s9lO" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 py-3 px-4 rounded-lg transition font-medium text-sm shadow-sm">
+                            <i class="fa-solid fa-file-pdf text-lg"></i> Lihat Proposal
+                        </a>
+                        
+                        <!-- Tautan Drive Progres Pembangunan -->
+                        <a href="https://drive.google.com/drive/folders/1YoqgsMSuaCNDpriCjOJ8YLqkx8WT3ois" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 py-3 px-4 rounded-lg transition font-medium text-sm shadow-sm">
+                            <i class="fa-solid fa-person-digging text-lg"></i> Progres Pembangunan
+                        </a>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-3 text-center sm:text-left italic">* Tautan di atas akan membuka tab baru menuju Google Drive.</p>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="font-semibold text-gray-700 mb-4 border-b pb-2">Transaksi Terbaru</h3>
+                    <div v-if="recentDonations.length === 0" class="text-center text-gray-500 py-4 italic text-sm">
+                        Belum ada data donasi tercatat.
+                    </div>
+                    <div v-else class="space-y-3">
+                        <div v-for="(donasi, index) in recentDonations" :key="index" class="flex justify-between items-center p-3 hover:bg-gray-50 rounded border border-transparent hover:border-gray-100 transition">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white" :class="donasi.kategori === 'Keluarga' ? 'bg-blue-400' : 'bg-amber-400'">
+                                    <i class="fa-solid" :class="donasi.kategori === 'Keluarga' ? 'fa-user' : 'fa-users'"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-800 text-sm">{{ donasi.nama }}</p>
+                                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                                        <span>{{ formatDate(donasi.tanggal) }}</span>
+                                        <span>•</span>
+                                        <span :class="donasi.kategori === 'Keluarga' ? 'text-blue-600' : 'text-amber-600'">{{ donasi.kategori }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-gray-800">+ {{ formatRupiah(donasi.jumlah) }}</p>
+                                <p class="text-xs text-gray-500 capitalize">{{ donasi.metode }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="currentTab === 'keluarga'" class="max-w-6xl mx-auto space-y-6">
+                <!-- Halaman Terkunci (Hanya tampil jika bukan admin dan belum unlock) -->
+                <div v-if="!isKeluargaUnlocked && !isAdmin" class="max-w-md mx-auto mt-12 bg-white rounded-xl shadow-md border border-gray-100 p-8 text-center no-print">
+                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-3xl mx-auto mb-4">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Akses Terbatas</h2>
+                    <p class="text-gray-500 text-sm mb-6">Halaman rincian Dana Keluarga bersifat privat dan hanya dapat diakses oleh anggota keluarga besar. Silakan masukkan password.</p>
+                    <form @submit.prevent="unlockKeluarga" class="space-y-4">
+                        <input v-model="keluargaPassword" type="password" placeholder="Password Keluarga" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 rounded-md hover:bg-blue-700 transition flex justify-center items-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-key"></i> Buka Kunci
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Konten Dana Keluarga (Tampil jika Admin atau Keluarga Unlocked) -->
+                <div v-else class="space-y-6">
+                    <!-- Header Component for Print -->
+                    <div class="print-only print-header">
+                        <h1>LAPORAN DANA MASUK (KELUARGA)</h1>
+                        <h2 v-if="subTabKeluarga === 'individu'">Rincian Per-Individu & Empu</h2>
+                        <h2 v-if="subTabKeluarga === 'rekap'">Rekapitulasi Akumulasi Per-Empu</h2>
+                        <p>Pembangunan RKB MI WB Ngares Trenggalek</p>
+                        <p>Dicetak pada: {{ new Date().toLocaleString('id-ID') }}</p>
+                        <hr style="margin-top:10px; border:1px solid black;">
+                    </div>
+
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 no-print">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Dana Masuk Keluarga</h2>
+                            <p class="text-gray-500 text-sm">Pencatatan donasi keluarga berdasarkan Empu dan Individu.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button v-if="isAdmin" @click="openModal('keluarga')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Tambah Data
+                            </button>
+                            <button @click="exportToCSV('keluarga')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow transition flex items-center gap-2">
+                                <i class="fa-solid fa-file-csv"></i> Export CSV
+                            </button>
+                            <button @click="exportToPDF('keluarga')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow transition flex items-center gap-2">
+                                <i class="fa-solid fa-file-pdf"></i> Export PDF
+                            </button>
+                            <button @click="printPage()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded shadow transition flex items-center gap-2">
+                                <i class="fa-solid fa-print"></i> Cetak
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tabs for Keluarga -->
+                    <div class="flex gap-4 border-b border-gray-200 no-print">
+                        <button v-if="isAdmin" @click="subTabKeluarga = 'individu'" :class="{'border-blue-600 text-blue-600 font-semibold border-b-2': subTabKeluarga === 'individu', 'text-gray-500 hover:text-gray-700': subTabKeluarga !== 'individu'}" class="pb-2 px-1 transition">
+                            <i class="fa-solid fa-list-ul mr-1"></i> Rincian Individu (Transparansi)
+                        </button>
+                        <button @click="subTabKeluarga = 'rekap'" :class="{'border-blue-600 text-blue-600 font-semibold border-b-2': subTabKeluarga === 'rekap', 'text-gray-500 hover:text-gray-700': subTabKeluarga !== 'rekap'}" class="pb-2 px-1 transition">
+                            <i class="fa-solid fa-layer-group mr-1"></i> Rekap Akumulasi Per-Empu
+                        </button>
+                    </div>
+
+                    <!-- Table Card: Rincian Individu -->
+                    <div v-if="isAdmin" v-show="subTabKeluarga === 'individu'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center no-print">
+                            <div class="relative w-full max-w-xs">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                <input v-model="searchKeluarga" type="text" placeholder="Cari individu atau empu..." class="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+                            </div>
+                            <div class="text-sm font-semibold text-gray-700 hidden sm:block">
+                                Total Dana Transparan: <span class="text-blue-600">{{ formatRupiah(totalDanaKeluarga) }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container overflow-x-auto w-full">
+                            <table class="w-full text-left border-collapse min-w-[900px]">
+                                <thead>
+                                    <tr class="bg-blue-50 text-blue-900 border-b border-gray-200 text-sm">
+                                        <th class="py-3 px-4 font-semibold w-12 text-center">No</th>
+                                        <th class="py-3 px-4 font-semibold">Tanggal</th>
+                                        <th class="py-3 px-4 font-semibold">Nama Empu (Sub-Kel)</th>
+                                        <th class="py-3 px-4 font-semibold">Nama Individu</th>
+                                        <th class="py-3 px-4 font-semibold">Alamat/RT</th>
+                                        <th class="py-3 px-4 font-semibold text-right">Jumlah (Rp)</th>
+                                        <th class="py-3 px-4 font-semibold">Metode</th>
+                                        <th v-if="isAdmin" class="py-3 px-4 font-semibold text-center no-print w-24">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="filteredKeluarga.length === 0">
+                                        <td :colspan="isAdmin ? 8 : 7" class="py-8 text-center text-gray-500">Tidak ada data ditemukan.</td>
+                                    </tr>
+                                    <tr v-for="(item, index) in filteredKeluarga" :key="item.id" class="border-b border-gray-100 hover:bg-gray-50 text-sm">
+                                        <td class="py-3 px-4 text-center text-gray-500">{{ index + 1 }}</td>
+                                        <td class="py-3 px-4 whitespace-nowrap">{{ formatDate(item.tanggal) }}</td>
+                                        <td class="py-3 px-4 font-medium text-blue-700">{{ item.namaEmpu || '-' }}</td>
+                                        <td class="py-3 px-4 font-medium text-gray-800">{{ item.namaIndividu || item.nama }}</td>
+                                        <td class="py-3 px-4 text-gray-600">{{ item.alamat }}</td>
+                                        <td class="py-3 px-4 text-right font-semibold text-gray-700">{{ formatRupiahNumber(item.jumlah) }}</td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                                {{ item.metode }}
+                                            </span>
+                                        </td>
+                                        <td v-if="isAdmin" class="py-3 px-4 text-center no-print">
+                                            <button @click="editData('keluarga', item)" class="text-blue-500 hover:text-blue-700 mx-1" title="Edit">
+                                                <i class="fa-solid fa-edit"></i>
+                                            </button>
+                                            <button @click="confirmDelete('keluarga', item.id)" class="text-red-500 hover:text-red-700 mx-1" title="Hapus">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="bg-gray-50 font-bold text-gray-800 border-t-2 border-gray-300 print-only">
+                                        <td colspan="5" class="py-3 px-4 text-right">TOTAL KESELURUHAN:</td>
+                                        <td class="py-3 px-4 text-right">{{ formatRupiahNumber(totalDanaKeluarga) }}</td>
+                                        <td :colspan="isAdmin ? 2 : 1"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Table Card: Rekap Akumulasi Per-Empu -->
+                    <div v-show="subTabKeluarga === 'rekap'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center no-print">
+                            <p class="text-sm text-gray-600">Tabel ini menjumlahkan secara otomatis donasi dari setiap individu berdasarkan Empu-nya.</p>
+                            <div class="text-sm font-semibold text-gray-700">
+                                Total Dana: <span class="text-blue-600">{{ formatRupiah(totalDanaKeluarga) }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container overflow-x-auto w-full">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-emerald-50 text-emerald-900 border-b border-gray-200 text-sm">
+                                        <th class="py-3 px-4 font-semibold w-12 text-center">No</th>
+                                        <th class="py-3 px-4 font-semibold">Nama Empu (Sub-Keluarga)</th>
+                                        <th class="py-3 px-4 font-semibold text-center">Jumlah Donatur (Individu)</th>
+                                        <th class="py-3 px-4 font-semibold text-right">Total Akumulasi (Rp)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="rekapPerEmpu.length === 0">
+                                        <td colspan="4" class="py-8 text-center text-gray-500">Tidak ada data terakumulasi.</td>
+                                    </tr>
+                                    <tr v-for="(empu, index) in rekapPerEmpu" :key="empu.empu" class="border-b border-gray-100 hover:bg-gray-50 text-sm">
+                                        <td class="py-3 px-4 text-center text-gray-500">{{ index + 1 }}</td>
+                                        <td class="py-3 px-4 font-bold text-gray-800">{{ empu.empu }}</td>
+                                        <td class="py-3 px-4 text-center text-gray-600"><span class="bg-gray-200 text-gray-700 py-1 px-3 rounded-full text-xs font-semibold">{{ empu.totalDonatur }} Orang</span></td>
+                                        <td class="py-3 px-4 text-right font-bold text-emerald-600 text-lg">{{ formatRupiahNumber(empu.totalJumlah) }}</td>
+                                    </tr>
+                                    <tr class="bg-gray-50 font-bold text-gray-800 border-t-2 border-gray-300">
+                                        <td colspan="2" class="py-3 px-4 text-right">TOTAL KESELURUHAN DANA KELUARGA:</td>
+                                        <td class="py-3 px-4 text-center">{{ donationsKeluarga.length }} Orang</td>
+                                        <td class="py-3 px-4 text-right text-xl">{{ formatRupiahNumber(totalDanaKeluarga) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div> <!-- Akhir dari div Konten Dana Keluarga yang digembok -->
+            </div>
+
+            <div v-show="currentTab === 'umum'" class="max-w-6xl mx-auto space-y-6">
+                 <!-- Header Component for Print -->
+                 <div class="print-only print-header">
+                    <h1>LAPORAN DANA MASUK (ALUMNI & UMUM)</h1>
+                    <h2>Pembangunan RKB MI WB Ngares Trenggalek</h2>
+                    <p>Dicetak pada: {{ new Date().toLocaleString('id-ID') }}</p>
+                    <hr style="margin-top:10px; border:1px solid black;">
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 no-print">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Dana Masuk Alumni & Umum</h2>
+                        <p class="text-gray-500 text-sm">Pencatatan donasi dari Alumni dan Masyarakat Umum.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button v-if="isAdmin" @click="openModal('umum')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Tambah Data
+                        </button>
+                        <button @click="exportToCSV('umum')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-csv"></i> Export CSV
+                        </button>
+                        <button @click="exportToPDF('umum')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-pdf"></i> Export PDF
+                        </button>
+                        <button @click="printPage()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-print"></i> Cetak
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center no-print">
+                        <div class="relative w-full max-w-xs">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input v-model="searchUmum" type="text" placeholder="Cari nama atau angkatan..." class="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm">
+                        </div>
+                        <div class="text-sm font-semibold text-gray-700 hidden sm:block">
+                            Total: <span class="text-amber-600">{{ formatRupiah(totalDanaUmum) }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container overflow-x-auto w-full">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="bg-amber-50 text-amber-900 border-b border-gray-200 text-sm">
+                                    <th class="py-3 px-4 font-semibold w-12 text-center">No</th>
+                                    <th class="py-3 px-4 font-semibold">Tanggal</th>
+                                    <th class="py-3 px-4 font-semibold">Nama / Instansi</th>
+                                    <th class="py-3 px-4 font-semibold">Kategori/Angkatan</th>
+                                    <th class="py-3 px-4 font-semibold text-right">Jumlah (Rp)</th>
+                                    <th class="py-3 px-4 font-semibold">Metode</th>
+                                    <th class="py-3 px-4 font-semibold">Keterangan</th>
+                                    <th v-if="isAdmin" class="py-3 px-4 font-semibold text-center no-print w-24">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="filteredUmum.length === 0">
+                                    <td :colspan="isAdmin ? 8 : 7" class="py-8 text-center text-gray-500">Tidak ada data ditemukan.</td>
+                                </tr>
+                                <tr v-for="(item, index) in filteredUmum" :key="item.id" class="border-b border-gray-100 hover:bg-gray-50 text-sm">
+                                    <td class="py-3 px-4 text-center text-gray-500">{{ index + 1 }}</td>
+                                    <td class="py-3 px-4 whitespace-nowrap">{{ formatDate(item.tanggal) }}</td>
+                                    <td class="py-3 px-4 font-medium text-gray-800">
+                                        <span v-if="item.isAnonim">
+                                            <span v-if="!isAdmin">***</span>
+                                            <span v-else>{{ item.nama }} <span class="text-xs text-amber-600 font-normal italic">(***)</span></span>
+                                        </span>
+                                        <span v-else>{{ item.nama }}</span>
+                                    </td>
+                                    <td class="py-3 px-4 text-gray-600">{{ item.kategoriDetail }}</td>
+                                    <td class="py-3 px-4 text-right font-semibold text-gray-700">{{ formatRupiahNumber(item.jumlah) }}</td>
+                                    <td class="py-3 px-4">
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                            {{ item.metode }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-gray-500 truncate max-w-[150px]" :title="item.keterangan">{{ item.keterangan || '-' }}</td>
+                                    <td v-if="isAdmin" class="py-3 px-4 text-center no-print">
+                                        <button @click="editData('umum', item)" class="text-blue-500 hover:text-blue-700 mx-1" title="Edit">
+                                            <i class="fa-solid fa-edit"></i>
+                                        </button>
+                                        <button @click="confirmDelete('umum', item.id)" class="text-red-500 hover:text-red-700 mx-1" title="Hapus">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-gray-50 font-bold text-gray-800 border-t-2 border-gray-300 print-only">
+                                    <td colspan="4" class="py-3 px-4 text-right">TOTAL KESELURUHAN:</td>
+                                    <td class="py-3 px-4 text-right">{{ formatRupiahNumber(totalDanaUmum) }}</td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Input/Edit -->
+            <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4 no-print backdrop-blur-sm transition-opacity">
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-full">
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 border-b flex justify-between items-center" :class="modalType === 'keluarga' ? 'bg-blue-600 text-white' : 'bg-amber-500 text-white'">
+                        <h3 class="text-lg font-bold">
+                            {{ isEditing ? 'Edit Data' : 'Tambah Data' }} 
+                            {{ modalType === 'keluarga' ? 'Keluarga' : 'Alumni & Umum' }}
+                        </h3>
+                        <button @click="closeModal" class="text-white hover:text-gray-200 focus:outline-none">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Modal Body -->
+                    <div class="p-6 overflow-y-auto">
+                        <form @submit.prevent="saveData" class="space-y-4">
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Terima *</label>
+                                <input v-model="formData.tanggal" type="date" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'">
+                            </div>
+
+                            <!-- Input Khusus Keluarga (Empu & Individu) -->
+                            <div v-if="modalType === 'keluarga'" class="space-y-4">
+                                <div class="bg-blue-50 p-3 rounded-md border border-blue-100">
+                                    <label class="block text-sm font-bold text-blue-800 mb-1">
+                                        Nama Empu (Sub-Keluarga Besar) *
+                                    </label>
+                                    <p class="text-xs text-blue-600 mb-2">Contoh: Empu Siti Rustini</p>
+                                    <input v-model="formData.namaEmpu" type="text" required placeholder="Masukkan Nama Empu..." class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">
+                                        Nama Individu / Penyumbang *
+                                    </label>
+                                    <p class="text-xs text-gray-500 mb-2">Contoh: Sdr. Surya (Anggota dari Empu di atas)</p>
+                                    <input v-model="formData.namaIndividu" type="text" required placeholder="Masukkan Nama Individu..." class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Alamat / RT / Lingkungan</label>
+                                    <input v-model="formData.alamat" type="text" placeholder="Contoh: RT 19 RW 05 Ngares..." class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <!-- Input Khusus Alumni/Umum -->
+                            <div v-if="modalType === 'umum'">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Nama Donatur / Instansi *
+                                </label>
+                                <input v-model="formData.nama" type="text" required placeholder="Masukkan nama..." class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-amber-500 focus:ring-amber-500">
+                                <label class="flex items-center mt-2 text-sm text-gray-600 cursor-pointer">
+                                    <input v-model="formData.isAnonim" type="checkbox" class="mr-2 rounded text-amber-600 focus:ring-amber-500">
+                                    Rahasiakan Nama (Tampil sebagai ***)
+                                </label>
+                            </div>
+
+                            <div v-if="modalType === 'umum'">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Kategori / Angkatan Alumni</label>
+                                <div class="flex gap-2">
+                                    <select v-model="formData.kategoriUmum" class="w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-amber-500 focus:ring-amber-500">
+                                        <option value="Alumni">Alumni</option>
+                                        <option value="Masyarakat">Masyarakat</option>
+                                        <option value="Instansi">Instansi/Lembaga</option>
+                                        <option value="Hamba Allah">Hamba Allah</option>
+                                    </select>
+                                    <input v-if="formData.kategoriUmum === 'Alumni'" v-model="formData.angkatan" type="text" placeholder="Thn Lulus (Msl: 1995)" class="w-2/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-amber-500 focus:ring-amber-500">
+                                    <input v-else v-model="formData.angkatan" type="text" placeholder="Detail (Opsional)" class="w-2/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-amber-500 focus:ring-amber-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Donasi (Rp) *</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">Rp</span>
+                                    </div>
+                                    <input v-model="formattedJumlahInput" @input="formatInputRibuan" type="text" required placeholder="0" class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 text-right font-semibold" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Metode Penyerahan</label>
+                                <select v-model="formData.metode" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'">
+                                    <option value="Tunai">Tunai (Cash)</option>
+                                    <option value="Transfer Bank">Transfer Bank</option>
+                                    <option value="Barang/Material">Berupa Barang/Material (Estimasi Nilai)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan Tambahan</label>
+                                <textarea v-model="formData.keterangan" rows="2" placeholder="Catatan opsional..." class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'"></textarea>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3 rounded-b-xl">
+                        <button type="button" @click="closeModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none">
+                            Batal
+                        </button>
+                        <button type="button" @click="saveData" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2" :class="modalType === 'keluarga' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500'">
+                            {{ isEditing ? 'Simpan Perubahan' : 'Simpan Data' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 no-print backdrop-blur-sm transition-opacity">
+                 <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden p-6 text-center">
+                    <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-3xl mx-auto mb-4">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Data?</h3>
+                    <p class="text-sm text-gray-500 mb-6">Data yang dihapus tidak dapat dikembalikan. Apakah Anda yakin?</p>
+                    <div class="flex justify-center gap-3">
+                        <button @click="showDeleteModal = false" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 w-1/2">
+                            Batal
+                        </button>
+                        <button @click="executeDelete" class="px-4 py-2 bg-red-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-red-700 w-1/2">
+                            Ya, Hapus
+                        </button>
+                    </div>
+                 </div>
+            </div>
+
+             <div v-if="showSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 no-print backdrop-blur-sm transition-opacity">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b bg-gray-800 text-white flex justify-between items-center">
+                        <h3 class="text-lg font-bold">Pengaturan</h3>
+                        <button @click="showSettingsModal = false" class="text-gray-300 hover:text-white focus:outline-none">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Target Dana RKB (Rp)</label>
+                        <div class="relative mb-4">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">Rp</span>
+                            </div>
+                            <input v-model="formattedTargetInput" @input="formatTargetRibuan" type="text" class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-right font-semibold">
+                        </div>
+                        <p class="text-xs text-gray-500 mb-4">Target ini digunakan untuk menghitung persentase progres pada Dashboard.</p>
+                        
+                        <div class="flex justify-end">
+                             <button @click="saveSettings" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 w-full font-medium">Simpan Target</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Modal -->
+            <div v-if="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 no-print backdrop-blur-sm transition-opacity">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b bg-emerald-800 text-white flex justify-between items-center">
+                        <h3 class="text-lg font-bold">Login Admin</h3>
+                        <button @click="showLoginModal = false" class="text-gray-300 hover:text-white focus:outline-none">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <form @submit.prevent="loginAdmin">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password Akses</label>
+                            <input v-model="adminPassword" type="password" placeholder="Masukkan password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-4" required>
+                            
+                            <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 w-full font-medium flex justify-center items-center gap-2 shadow-sm">
+                                <i class="fa-solid fa-right-to-bracket"></i> Masuk
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                // --- State ---
+                const isAdmin = ref(false);
+                const showLoginModal = ref(false);
+                const adminPassword = ref('');
+                const ADMIN_PASS = 'adminrkb123'; // Default password
+
+                const currentTab = ref('dashboard');
+                const subTabKeluarga = ref('rekap'); // Default to rekap for public privacy
+                const mobileMenuOpen = ref(false);
+                const toast = ref({ show: false, message: '', type: 'success' });
+                
+                // Password Keluarga State
+                const isKeluargaUnlocked = ref(false);
+                const keluargaPassword = ref('');
+                const KELUARGA_PASS = 'kudurukun';
+
+                // Data Storage
+                const donationsKeluarga = ref([]);
+                const donationsUmum = ref([]);
+                const targetDana = ref(500000000); // Default 500 Juta
+                
+                // Animasi Angka Dashboard
+                const displayTotalKeluarga = ref(0);
+                const displayTotalUmum = ref(0);
+                const displayTotalAll = ref(0);
+                const displayProgress = ref(0);
+                
+                // Search States
+                const searchKeluarga = ref('');
+                const searchUmum = ref('');
+
+                // Modal States
+                const showModal = ref(false);
+                const showDeleteModal = ref(false);
+                const showSettingsModal = ref(false);
+                const modalType = ref('keluarga'); // 'keluarga' or 'umum'
+                const isEditing = ref(false);
+                const editingId = ref(null);
+                const itemToDelete = ref({ type: '', id: null });
+                
+                // Form Data
+                const getInitialForm = () => ({
+                    tanggal: new Date().toISOString().split('T')[0],
+                    nama: '', // For Umum
+                    namaEmpu: '', // For Keluarga
+                    namaIndividu: '', // For Keluarga
+                    alamat: '', // For Keluarga
+                    kategoriUmum: 'Alumni', // For Umum
+                    angkatan: '', // For Umum
+                    jumlah: 0,
+                    metode: 'Tunai',
+                    keterangan: '',
+                    isAnonim: false
+                });
+                const formData = ref(getInitialForm());
+                const formattedJumlahInput = ref('');
+                const formattedTargetInput = ref('');
+
+                // --- Lifecycle Hooks ---
+                onMounted(() => {
+                    loadDataFromStorage();
+                    formattedTargetInput.value = formatNumberOnly(targetDana.value);
+                    
+                    // Trigger animasi angka awal saat web dibuka
+                    setTimeout(() => {
+                        animateNumber(displayTotalKeluarga, totalDanaKeluarga.value);
+                        animateNumber(displayTotalUmum, totalDanaUmum.value);
+                        animateNumber(displayTotalAll, totalDanaKeluarga.value + totalDanaUmum.value);
+                        animateNumber(displayProgress, progressPercentage.value);
+                    }, 300);
+
+                    // Check session for admin status
+                    if (sessionStorage.getItem('rkb_is_admin') === 'true') {
+                        isAdmin.value = true;
+                        subTabKeluarga.value = 'individu'; // Admins default to individu
+                    }
+
+                    // Check session for keluarga unlock status
+                    if (sessionStorage.getItem('rkb_keluarga_unlocked') === 'true') {
+                        isKeluargaUnlocked.value = true;
+                    }
+                });
+
+                // --- Admin & Security Methods ---
+                const unlockKeluarga = () => {
+                    if (keluargaPassword.value === KELUARGA_PASS) {
+                        isKeluargaUnlocked.value = true;
+                        sessionStorage.setItem('rkb_keluarga_unlocked', 'true');
+                        subTabKeluarga.value = 'rekap'; // Keluarga hanya boleh melihat rekap
+                        showToast('Akses Keluarga berhasil dibuka.', 'success');
+                        keluargaPassword.value = '';
+                    } else {
+                        showToast('Password Keluarga salah!', 'error');
+                    }
+                };
+
+                const loginAdmin = () => {
+                    if (adminPassword.value === ADMIN_PASS) {
+                        isAdmin.value = true;
+                        sessionStorage.setItem('rkb_is_admin', 'true');
+                        showLoginModal.value = false;
+                        adminPassword.value = '';
+                        subTabKeluarga.value = 'individu'; // Auto switch to detail view
+                        showToast('Login berhasil sebagai Admin.', 'success');
+                    } else {
+                        showToast('Password salah!', 'error');
+                    }
+                };
+
+                const logoutAdmin = () => {
+                    isAdmin.value = false;
+                    sessionStorage.removeItem('rkb_is_admin');
+                    if (currentTab.value === 'keluarga' && !isKeluargaUnlocked.value) {
+                        subTabKeluarga.value = 'rekap'; // Protect privacy immediately
+                    }
+                    showToast('Berhasil logout.', 'success');
+                };
+
+                // --- Methods: Local Storage ---
+                const loadDataFromStorage = () => {
+                    const storedKeluarga = localStorage.getItem('rkb_dana_keluarga');
+                    const storedUmum = localStorage.getItem('rkb_dana_umum');
+                    const storedTarget = localStorage.getItem('rkb_target_dana');
+
+                    if (storedKeluarga) donationsKeluarga.value = JSON.parse(storedKeluarga);
+                    if (storedUmum) donationsUmum.value = JSON.parse(storedUmum);
+                    if (storedTarget) targetDana.value = parseInt(storedTarget);
+                };
+
+                const saveDataToStorage = () => {
+                    localStorage.setItem('rkb_dana_keluarga', JSON.stringify(donationsKeluarga.value));
+                    localStorage.setItem('rkb_dana_umum', JSON.stringify(donationsUmum.value));
+                    localStorage.setItem('rkb_target_dana', targetDana.value.toString());
+                };
+
+                // Watch for changes and save automatically
+                watch([donationsKeluarga, donationsUmum, targetDana], () => {
+                    saveDataToStorage();
+                }, { deep: true });
+
+                // Fungsi Animasi (Number Counter)
+                const animateNumber = (refObj, newValue, duration = 1500) => {
+                    const startValue = refObj.value || 0;
+                    const change = newValue - startValue;
+                    let startTime = null;
+
+                    const step = (currentTime) => {
+                        if (!startTime) startTime = currentTime;
+                        const timeElapsed = currentTime - startTime;
+                        const progress = Math.min(timeElapsed / duration, 1);
+                        
+                        // Efek melambat di akhir (easeOutQuart)
+                        const ease = 1 - Math.pow(1 - progress, 4);
+                        refObj.value = startValue + (change * ease);
+
+                        if (progress < 1) {
+                            window.requestAnimationFrame(step);
+                        } else {
+                            refObj.value = newValue; // pastikan angka akhirnya pas
+                        }
+                    };
+                    window.requestAnimationFrame(step);
+                };
+
+                // --- Computed Properties ---
+                const totalDanaKeluarga = computed(() => {
+                    return donationsKeluarga.value.reduce((sum, item) => sum + parseInt(item.jumlah || 0), 0);
+                });
+
+                const totalDanaUmum = computed(() => {
+                    return donationsUmum.value.reduce((sum, item) => sum + parseInt(item.jumlah || 0), 0);
+                });
+
+                const progressPercentage = computed(() => {
+                    const total = totalDanaKeluarga.value + totalDanaUmum.value;
+                    if (targetDana.value === 0) return 0;
+                    const percent = (total / targetDana.value) * 100;
+                    return percent > 100 ? 100 : Math.round(percent * 10) / 10;
+                });
+
+                // Memantau perubahan data untuk memicu animasi saat data ditambah/dihapus
+                watch(totalDanaKeluarga, (newVal) => animateNumber(displayTotalKeluarga, newVal));
+                watch(totalDanaUmum, (newVal) => animateNumber(displayTotalUmum, newVal));
+                watch(() => totalDanaKeluarga.value + totalDanaUmum.value, (newVal) => animateNumber(displayTotalAll, newVal));
+                watch(progressPercentage, (newVal) => animateNumber(displayProgress, newVal));
+
+                const recentDonations = computed(() => {
+                    // Combine, format category, sort by date (newest first), take top 5
+                    const combined = [
+                        ...donationsKeluarga.value.map(d => ({ 
+                            ...d, 
+                            // Mask the individual name if not an admin
+                            nama: isAdmin.value ? (d.namaIndividu || d.nama) : 'Keluarga', 
+                            kategori: 'Keluarga' 
+                        })),
+                        ...donationsUmum.value.map(d => ({ 
+                            ...d, 
+                            nama: d.isAnonim ? (isAdmin.value ? `${d.nama} (***)` : '***') : d.nama,
+                            kategori: 'Alumni/Umum' 
+                        }))
+                    ];
+                    return combined
+                        .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal) || b.id - a.id)
+                        .slice(0, 5);
+                });
+
+                const filteredKeluarga = computed(() => {
+                    if (!searchKeluarga.value) return [...donationsKeluarga.value].sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+                    const term = searchKeluarga.value.toLowerCase();
+                    return donationsKeluarga.value.filter(item => 
+                        (item.namaIndividu && item.namaIndividu.toLowerCase().includes(term)) || 
+                        (item.namaEmpu && item.namaEmpu.toLowerCase().includes(term)) ||
+                        (item.nama && item.nama.toLowerCase().includes(term)) || // legacy support
+                        (item.alamat && item.alamat.toLowerCase().includes(term))
+                    ).sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+                });
+
+                const rekapPerEmpu = computed(() => {
+                    const rekap = {};
+                    donationsKeluarga.value.forEach(d => {
+                        // Fallback ke 'Tanpa Nama Empu' jika data lama
+                        const empu = d.namaEmpu || 'Lainnya (Tanpa Keterangan Empu)'; 
+                        if (!rekap[empu]) {
+                            rekap[empu] = { empu: empu, totalDonatur: 0, totalJumlah: 0 };
+                        }
+                        rekap[empu].totalDonatur++;
+                        rekap[empu].totalJumlah += parseInt(d.jumlah || 0);
+                    });
+                    
+                    // Convert object to array and sort by highest amount
+                    return Object.values(rekap).sort((a, b) => b.totalJumlah - a.totalJumlah);
+                });
+
+                const filteredUmum = computed(() => {
+                    if (!searchUmum.value) {
+                         // Add computed category detail for display
+                        return [...donationsUmum.value].map(d => ({
+                            ...d, 
+                            kategoriDetail: d.kategoriUmum === 'Alumni' && d.angkatan ? `Alumni - ${d.angkatan}` : (d.angkatan ? `${d.kategoriUmum} - ${d.angkatan}` : d.kategoriUmum)
+                        })).sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+                    }
+                    const term = searchUmum.value.toLowerCase();
+                    return donationsUmum.value.map(d => ({
+                            ...d, 
+                            kategoriDetail: d.kategoriUmum === 'Alumni' && d.angkatan ? `Alumni - ${d.angkatan}` : (d.angkatan ? `${d.kategoriUmum} - ${d.angkatan}` : d.kategoriUmum)
+                        })).filter(item => 
+                        item.nama.toLowerCase().includes(term) || 
+                        (item.angkatan && item.angkatan.toLowerCase().includes(term)) ||
+                        item.kategoriUmum.toLowerCase().includes(term)
+                    ).sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+                });
+
+                // --- Methods: UI & Formatting ---
+                const switchTab = (tab) => {
+                    currentTab.value = tab;
+                    mobileMenuOpen.value = false;
+                };
+
+                const formatRupiah = (number) => {
+                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(number);
+                };
+
+                const formatRupiahNumber = (number) => {
+                    return new Intl.NumberFormat('id-ID').format(number);
+                };
+
+                const formatDate = (dateString) => {
+                    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+                    return new Date(dateString).toLocaleDateString('id-ID', options);
+                };
+
+                const showToast = (message, type = 'success') => {
+                    toast.value = { show: true, message, type };
+                    setTimeout(() => { toast.value.show = false; }, 3000);
+                };
+
+                // --- Methods: Form Handling ---
+                const formatNumberOnly = (val) => {
+                    if(val === null || val === undefined) return '';
+                    return val.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                };
+
+                const formatInputRibuan = (event) => {
+                    let val = event.target.value.replace(/\D/g, "");
+                    formData.value.jumlah = parseInt(val) || 0;
+                    formattedJumlahInput.value = formatNumberOnly(val);
+                };
+
+                const formatTargetRibuan = (event) => {
+                    let val = event.target.value.replace(/\D/g, "");
+                    formattedTargetInput.value = formatNumberOnly(val);
+                };
+
+                const saveSettings = () => {
+                    const rawVal = formattedTargetInput.value.replace(/\./g, "");
+                    targetDana.value = parseInt(rawVal) || 0;
+                    showSettingsModal.value = false;
+                    showToast('Pengaturan target berhasil disimpan.');
+                }
+
+                const openModal = (type) => {
+                    modalType.value = type;
+                    isEditing.value = false;
+                    editingId.value = null;
+                    formData.value = getInitialForm();
+                    formattedJumlahInput.value = '';
+                    showModal.value = true;
+                };
+
+                const closeModal = () => {
+                    showModal.value = false;
+                };
+
+                const editData = (type, item) => {
+                    modalType.value = type;
+                    isEditing.value = true;
+                    editingId.value = item.id;
+                    formData.value = { ...item };
+                    // Handle legacy data on edit
+                    if (type === 'keluarga') {
+                        if (!formData.value.namaIndividu && formData.value.nama) {
+                            formData.value.namaIndividu = formData.value.nama;
+                        }
+                    }
+                    formattedJumlahInput.value = formatNumberOnly(item.jumlah);
+                    showModal.value = true;
+                };
+
+                const saveData = () => {
+                    if (modalType.value === 'keluarga' && (!formData.value.namaEmpu || !formData.value.namaIndividu || !formData.value.tanggal || !formData.value.jumlah)) {
+                        showToast('Harap lengkapi field wajib (*)', 'error');
+                        return;
+                    }
+                    if (modalType.value === 'umum' && (!formData.value.nama || !formData.value.tanggal || !formData.value.jumlah)) {
+                        showToast('Harap lengkapi field wajib (*)', 'error');
+                        return;
+                    }
+
+                    const newData = { ...formData.value, id: isEditing.value ? editingId.value : Date.now() };
+
+                    if (modalType.value === 'keluarga') {
+                        if (isEditing.value) {
+                            const index = donationsKeluarga.value.findIndex(d => d.id === editingId.value);
+                            if(index !== -1) donationsKeluarga.value[index] = newData;
+                        } else {
+                            donationsKeluarga.value.push(newData);
+                        }
+                    } else {
+                        if (isEditing.value) {
+                            const index = donationsUmum.value.findIndex(d => d.id === editingId.value);
+                            if(index !== -1) donationsUmum.value[index] = newData;
+                        } else {
+                            donationsUmum.value.push(newData);
+                        }
+                    }
+
+                    closeModal();
+                    showToast(isEditing.value ? 'Data berhasil diperbarui.' : 'Data berhasil ditambahkan.');
+                };
+
+                const confirmDelete = (type, id) => {
+                    itemToDelete.value = { type, id };
+                    showDeleteModal.value = true;
+                };
+
+                const executeDelete = () => {
+                    if (itemToDelete.value.type === 'keluarga') {
+                        donationsKeluarga.value = donationsKeluarga.value.filter(d => d.id !== itemToDelete.value.id);
+                    } else {
+                        donationsUmum.value = donationsUmum.value.filter(d => d.id !== itemToDelete.value.id);
+                    }
+                    showDeleteModal.value = false;
+                    showToast('Data berhasil dihapus.');
+                };
+
+                // --- Export and Print Functions ---
+                const printPage = () => {
+                    window.print();
+                };
+
+                const exportToCSV = (type) => {
+                    if (type === 'keluarga' && subTabKeluarga.value === 'rekap') {
+                        // Export Rekap Empu
+                        let data = rekapPerEmpu.value;
+                        if(data.length === 0) return showToast('Tidak ada data untuk diekspor.', 'error');
+                        
+                        let csvContent = "data:text/csv;charset=utf-8,";
+                        csvContent += "No,Nama Empu (Sub-Keluarga),Jumlah Donatur,Total Akumulasi\n";
+                        data.forEach((row, index) => {
+                            let cleanEmpu = row.empu.replace(/,/g, '');
+                            csvContent += `${index+1},${cleanEmpu},${row.totalDonatur},${row.totalJumlah}\n`;
+                        });
+                        csvContent += `,,,${totalDanaKeluarga.value}\n`;
+
+                        const encodedUri = encodeURI(csvContent);
+                        const link = document.createElement("a");
+                        link.setAttribute("href", encodedUri);
+                        link.setAttribute("download", `Rekap_RKB_Per_Empu_${new Date().toISOString().split('T')[0]}.csv`);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast('CSV Rekap berhasil diunduh.');
+                        return;
+                    }
+
+                    let data = type === 'keluarga' ? filteredKeluarga.value : filteredUmum.value;
+                    if(data.length === 0) {
+                        showToast('Tidak ada data untuk diekspor.', 'error');
+                        return;
+                    }
+
+                    let csvContent = "data:text/csv;charset=utf-8,";
+                    
+                    if (type === 'keluarga') {
+                        csvContent += "No,Tanggal,Nama Empu,Nama Individu,Alamat,Jumlah,Metode,Keterangan\n";
+                        data.forEach((row, index) => {
+                            let cleanEmpu = (row.namaEmpu || '').replace(/,/g, '');
+                            let cleanIndividu = (row.namaIndividu || row.nama || '').replace(/,/g, '');
+                            let cleanAlamat = (row.alamat || '').replace(/,/g, '');
+                            let cleanKeterangan = (row.keterangan || '').replace(/,/g, '');
+                            csvContent += `${index+1},${row.tanggal},${cleanEmpu},${cleanIndividu},${cleanAlamat},${row.jumlah},${row.metode},${cleanKeterangan}\n`;
+                        });
+                        csvContent += `,,,,,TOTAL,${totalDanaKeluarga.value},,\n`;
+                    } else {
+                        csvContent += "No,Tanggal,Nama/Instansi,Kategori/Angkatan,Jumlah,Metode,Keterangan\n";
+                        data.forEach((row, index) => {
+                            let cleanKat = (row.kategoriDetail || '').replace(/,/g, '');
+                            let cleanKeterangan = (row.keterangan || '').replace(/,/g, '');
+                            csvContent += `${index+1},${row.tanggal},${row.nama},${cleanKat},${row.jumlah},${row.metode},${cleanKeterangan}\n`;
+                        });
+                        csvContent += `,,,TOTAL,${totalDanaUmum.value},,\n`;
+                    }
+
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `Laporan_RKB_${type}_${new Date().toISOString().split('T')[0]}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showToast('CSV berhasil diunduh.');
+                };
+
+                const exportToPDF = (type) => {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    
+                    let title = '';
+                    if (type === 'keluarga') {
+                        title = subTabKeluarga.value === 'individu' ? 'LAPORAN RINCIAN INDIVIDU (KELUARGA)' : 'LAPORAN REKAP PER-EMPU (KELUARGA)';
+                    } else {
+                        title = 'LAPORAN DANA MASUK (ALUMNI & UMUM)';
+                    }
+                    
+                    doc.setFontSize(14);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(title, 105, 15, { align: 'center' });
+                    
+                    doc.setFontSize(12);
+                    doc.text('Pembangunan RKB MI WB Ngares Trenggalek', 105, 22, { align: 'center' });
+                    
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 32);
+
+                    let dataList = type === 'keluarga' ? filteredKeluarga.value : filteredUmum.value;
+                    let tableData = [];
+                    
+                    if(type === 'keluarga') {
+                        if (subTabKeluarga.value === 'individu') {
+                            let total = 0;
+                            dataList.forEach((r, i) => {
+                                tableData.push([i+1, formatDate(r.tanggal), r.namaEmpu || '-', r.namaIndividu || r.nama || '-', formatRupiahNumber(r.jumlah)]);
+                                total += parseInt(r.jumlah);
+                            });
+                            tableData.push([{content: 'TOTAL', colSpan: 4, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}]);
+                            
+                            doc.autoTable({
+                                startY: 35,
+                                head: [['No', 'Tanggal', 'Nama Empu', 'Nama Individu', 'Jumlah (Rp)']],
+                                body: tableData,
+                                theme: 'grid',
+                                headStyles: { fillColor: [37, 99, 235] } // Blue
+                            });
+                        } else {
+                            // Export Rekap Empu to PDF
+                            let dataRekap = rekapPerEmpu.value;
+                            let total = 0;
+                            dataRekap.forEach((r, i) => {
+                                tableData.push([i+1, r.empu, `${r.totalDonatur} Org`, formatRupiahNumber(r.totalJumlah)]);
+                                total += parseInt(r.totalJumlah);
+                            });
+                            tableData.push([{content: 'TOTAL KESELURUHAN', colSpan: 3, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}]);
+                            
+                            doc.autoTable({
+                                startY: 35,
+                                head: [['No', 'Nama Empu (Sub-Keluarga)', 'Jml Donatur', 'Total Akumulasi (Rp)']],
+                                body: tableData,
+                                theme: 'grid',
+                                headStyles: { fillColor: [16, 185, 129] } // Emerald
+                            });
+                        }
+                    } else {
+                        let total = 0;
+                        dataList.forEach((r, i) => {
+                            tableData.push([i+1, formatDate(r.tanggal), r.nama, r.kategoriDetail || '-', formatRupiahNumber(r.jumlah), r.metode]);
+                            total += parseInt(r.jumlah);
+                        });
+                        tableData.push([{content: 'TOTAL', colSpan: 4, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}, '']);
+                        
+                        doc.autoTable({
+                            startY: 35,
+                            head: [['No', 'Tanggal', 'Nama', 'Kategori', 'Jumlah (Rp)', 'Metode']],
+                            body: tableData,
+                            theme: 'grid',
+                            headStyles: { fillColor: [217, 119, 6] } // Amber
+                        });
+                    }
+
+                    doc.save(`Laporan_RKB_${type}.pdf`);
+                    showToast('PDF berhasil diunduh.');
+                };
+
+                return {
+                    isAdmin, showLoginModal, adminPassword, loginAdmin, logoutAdmin,
+                    isKeluargaUnlocked, keluargaPassword, unlockKeluarga,
+                    currentTab, subTabKeluarga, switchTab, mobileMenuOpen,
+                    donationsKeluarga, donationsUmum,
+                    totalDanaKeluarga, totalDanaUmum,
+                    displayTotalAll, displayTotalKeluarga, displayTotalUmum, displayProgress,
+                    searchKeluarga, searchUmum,
+                    filteredKeluarga, filteredUmum, rekapPerEmpu,
+                    recentDonations, targetDana, progressPercentage,
+                    formatRupiah, formatRupiahNumber, formatDate,
+                    showModal, showDeleteModal, modalType, isEditing, formData,
+                    formattedJumlahInput, formatInputRibuan,
+                    openModal, closeModal, editData, saveData, confirmDelete, executeDelete,
+                    exportToCSV, exportToPDF, printPage,
+                    toast, showSettingsModal, formattedTargetInput, formatTargetRibuan, saveSettings
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+```

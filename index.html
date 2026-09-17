@@ -221,16 +221,13 @@
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm flex-shrink-0" :class="donasi.kategori === 'Keluarga' ? 'bg-blue-500' : 'bg-amber-500'">
                                     <i class="fa-solid" :class="donasi.kategori === 'Keluarga' ? 'fa-user' : 'fa-users'"></i>
                                 </div>
-                                <div class="min-w-0 flex-1">
+                                <div class="min-w-0 flex-1 leading-tight">
                                     <p class="font-bold text-gray-800 text-sm truncate">{{ donasi.nama }}</p>
-                                    <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5 truncate">
-                                        <span>{{ formatDate(donasi.tanggal) }}</span>
-                                        <span>•</span>
-                                        <span :class="donasi.kategori === 'Keluarga' ? 'text-blue-600 font-semibold' : 'text-amber-600 font-semibold'">{{ donasi.kategori }}</span>
-                                    </div>
+                                    <p class="text-xs mt-1 truncate" :class="donasi.kategori === 'Keluarga' ? 'text-blue-600 font-semibold' : 'text-amber-600 font-semibold'">{{ donasi.kategori }}</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5 truncate">{{ formatDate(donasi.tanggal) }}</p>
                                 </div>
                             </div>
-                            <!-- Penyesuaian lebar dan pemotongan teks untuk barang material agar tidak merusak layout -->
+                            
                             <div class="text-right flex-shrink-0 max-w-[130px] sm:max-w-[250px] flex flex-col justify-center items-end">
                                 <p v-if="donasi.metode === 'Barang/Material' && (!donasi.jumlah || donasi.jumlah == 0)" 
                                    class="font-bold text-gray-600 text-xs sm:text-sm truncate w-full" 
@@ -658,7 +655,7 @@
                 </div>
             </div>
 
-            <!-- Login Modal Admin (Default Tertutup) -->
+            <!-- Login Modal Admin -->
             <div v-if="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 no-print backdrop-blur-sm transition-opacity">
                 <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
                     <div class="px-6 py-4 border-b bg-gray-900 text-white flex justify-between items-center">
@@ -686,7 +683,7 @@
     <!-- Integrasi Database Cloud Firebase & History API -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyBdn42Eendw5MGnHGQ74ZkeyUunWuKQ8gV",
@@ -697,8 +694,14 @@
           appId: "1:571172732568:web:70bcf2452358d87a631aed"
         };
         
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        let db = null;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Firebase tersambung.");
+        } catch (e) {
+            console.error("Gagal menyambung Firebase:", e);
+        }
 
         const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
 
@@ -939,6 +942,7 @@
                 };
 
                 const saveSettings = async () => {
+                    if (!db) return showToast('Database belum siap.', 'error');
                     const rawVal = formattedTargetInput.value.replace(/\./g, "");
                     const targetAmount = parseInt(rawVal) || 0;
                     
@@ -975,7 +979,8 @@
                 };
 
                 const saveData = async () => {
-                    // Validasi Mandatory
+                    if (!db) return showToast('Database belum siap.', 'error');
+                    
                     if (modalType.value === 'keluarga' && (!formData.value.namaEmpu || !formData.value.namaIndividu || !formData.value.tanggal)) {
                         return showToast('Harap lengkapi field wajib (*)', 'error');
                     }
@@ -983,7 +988,6 @@
                         return showToast('Harap lengkapi field wajib (*)', 'error');
                     }
 
-                    // Validasi Berdasarkan Metode Penyerahan
                     if (formData.value.metode !== 'Barang/Material' && !formData.value.jumlah) {
                         return showToast('Jumlah donasi uang wajib diisi!', 'error');
                     }
@@ -992,7 +996,6 @@
                     }
 
                     const newData = { ...formData.value };
-                    // Pastikan jumlah disimpan sebagai integer atau 0 (jika barang & tidak diisi nominalnya)
                     newData.jumlah = parseInt(newData.jumlah) || 0;
                     delete newData.id;
 
@@ -1027,6 +1030,7 @@
                 };
 
                 const executeDelete = async () => {
+                    if (!db) return showToast('Database belum siap.', 'error');
                     const targetId = itemToDelete.value.id;
                     try {
                         if (itemToDelete.value.type === 'keluarga') {
@@ -1054,35 +1058,40 @@
                         isKeluargaUnlocked.value = true;
                     }
 
-                    try {
-                        onSnapshot(collection(db, "donasi_keluarga"), (snapshot) => {
-                            const data = [];
-                            snapshot.forEach((docSnap) => {
-                                data.push({ id: docSnap.id, ...docSnap.data() });
+                    if (db) {
+                        try {
+                            onSnapshot(collection(db, "donasi_keluarga"), (snapshot) => {
+                                const data = [];
+                                snapshot.forEach((docSnap) => {
+                                    data.push({ id: docSnap.id, ...docSnap.data() });
+                                });
+                                donationsKeluarga.value = data;
+                            }, (error) => {
+                                console.error("Keluarga Snapshot Error:", error);
+                                showToast('Gagal membaca data dari Database', 'error');
                             });
-                            donationsKeluarga.value = data;
-                        }, (error) => {
-                            console.error("Keluarga Snapshot Error:", error);
-                        });
 
-                        onSnapshot(collection(db, "donasi_umum"), (snapshot) => {
-                            const data = [];
-                            snapshot.forEach((docSnap) => {
-                                data.push({ id: docSnap.id, ...docSnap.data() });
+                            onSnapshot(collection(db, "donasi_umum"), (snapshot) => {
+                                const data = [];
+                                snapshot.forEach((docSnap) => {
+                                    data.push({ id: docSnap.id, ...docSnap.data() });
+                                });
+                                donationsUmum.value = data;
+                            }, (error) => {
+                                console.error("Umum Snapshot Error:", error);
                             });
-                            donationsUmum.value = data;
-                        }, (error) => {
-                            console.error("Umum Snapshot Error:", error);
-                        });
 
-                        onSnapshot(doc(db, "pengaturan", "target"), (docSnap) => {
-                            if (docSnap.exists()) {
-                                targetDana.value = docSnap.data().amount;
-                                formattedTargetInput.value = formatNumberOnly(targetDana.value);
-                            }
-                        });
-                    } catch (error) {
-                        console.error("Firebase Initialization Error: ", error);
+                            onSnapshot(doc(db, "pengaturan", "target"), (docSnap) => {
+                                if (docSnap.exists()) {
+                                    targetDana.value = docSnap.data().amount;
+                                    formattedTargetInput.value = formatNumberOnly(targetDana.value);
+                                }
+                            });
+                        } catch (error) {
+                            console.error("Firebase Snapshot Error: ", error);
+                        }
+                    } else {
+                        showToast('Gagal terhubung ke Database', 'error');
                     }
                     
                     setTimeout(() => {

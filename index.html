@@ -22,19 +22,20 @@
             display: none !important;
         }
 
-        .table-container::-webkit-scrollbar {
+        /* Custom Scrollbar untuk Tabel dan Area Scroll */
+        .table-container::-webkit-scrollbar, .custom-scrollbar::-webkit-scrollbar {
             height: 8px;
-            width: 8px;
+            width: 6px;
         }
-        .table-container::-webkit-scrollbar-track {
+        .table-container::-webkit-scrollbar-track, .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f1f1; 
             border-radius: 4px;
         }
-        .table-container::-webkit-scrollbar-thumb {
+        .table-container::-webkit-scrollbar-thumb, .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #cbd5e1; 
             border-radius: 4px;
         }
-        .table-container::-webkit-scrollbar-thumb:hover {
+        .table-container::-webkit-scrollbar-thumb:hover, .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8; 
         }
 
@@ -208,16 +209,16 @@
                     <p class="text-[11px] text-gray-400 mt-3 text-center sm:text-left italic">* Tautan di atas membuka dokumen resmi melalui Google Drive.</p>
                 </div>
 
-                <!-- Recent Transactions -->
+                <!-- Recent Transactions (All History) -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 text-sm sm:text-base">Riwayat Transaksi</h3>
                     <div v-if="recentDonations.length === 0" class="text-center text-gray-500 py-6 italic text-sm">
                         Belum ada data donasi tercatat.
                     </div>
-                    <div v-else class="space-y-3">
+                    <div v-else class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                         <div v-for="(donasi, index) in recentDonations" :key="index" class="flex justify-between items-center p-3.5 hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-100 transition">
                             <div class="flex items-center gap-3.5">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm" :class="donasi.kategori === 'Keluarga' ? 'bg-blue-500' : 'bg-amber-500'">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm flex-shrink-0" :class="donasi.kategori === 'Keluarga' ? 'bg-blue-500' : 'bg-amber-500'">
                                     <i class="fa-solid" :class="donasi.kategori === 'Keluarga' ? 'fa-user' : 'fa-users'"></i>
                                 </div>
                                 <div>
@@ -229,8 +230,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <p class="font-bold text-emerald-600 text-sm sm:text-base">+ {{ formatRupiah(donasi.jumlah) }}</p>
+                            <div class="text-right whitespace-nowrap">
+                                <p v-if="donasi.metode === 'Barang/Material' && (!donasi.jumlah || donasi.jumlah == 0)" class="font-bold text-gray-500 text-sm sm:text-base italic">Wujud Barang</p>
+                                <p v-else class="font-bold text-emerald-600 text-sm sm:text-base">+ {{ formatRupiah(donasi.jumlah) }}</p>
                                 <p class="text-[11px] text-gray-400 capitalize">{{ donasi.metode }}</p>
                             </div>
                         </div>
@@ -305,7 +307,7 @@
                         </div>
                         
                         <div class="table-container overflow-x-auto w-full">
-                            <table class="w-full text-left border-collapse min-w-[900px]">
+                            <table class="w-full text-left border-collapse min-w-[950px]">
                                 <thead>
                                     <tr class="bg-blue-50 text-blue-900 border-b border-gray-200 text-xs sm:text-sm font-bold">
                                         <th class="py-3.5 px-4 w-12 text-center">No</th>
@@ -315,12 +317,13 @@
                                         <th class="py-3.5 px-4">Alamat/RT</th>
                                         <th class="py-3.5 px-4 text-right">Jumlah (Rp)</th>
                                         <th class="py-3.5 px-4">Metode</th>
+                                        <th class="py-3.5 px-4">Keterangan/Barang</th>
                                         <th class="py-3.5 px-4 text-center no-print w-24">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-sm">
                                     <tr v-if="filteredKeluarga.length === 0">
-                                        <td colspan="8" class="py-8 text-center text-gray-500 italic">Tidak ada data ditemukan.</td>
+                                        <td colspan="9" class="py-8 text-center text-gray-500 italic">Tidak ada data ditemukan.</td>
                                     </tr>
                                     <tr v-for="(item, index) in filteredKeluarga" :key="item.id" class="border-b border-gray-100 hover:bg-gray-50 transition">
                                         <td class="py-3.5 px-4 text-center text-gray-500">{{ index + 1 }}</td>
@@ -328,12 +331,15 @@
                                         <td class="py-3.5 px-4 font-bold text-blue-800">{{ item.namaEmpu || '-' }}</td>
                                         <td class="py-3.5 px-4 font-semibold text-gray-900">{{ item.namaIndividu || item.nama }}</td>
                                         <td class="py-3.5 px-4 text-gray-600">{{ item.alamat || '-' }}</td>
-                                        <td class="py-3.5 px-4 text-right font-bold text-gray-900">{{ formatRupiahNumber(item.jumlah) }}</td>
+                                        <td class="py-3.5 px-4 text-right font-bold" :class="item.metode === 'Barang/Material' && (!item.jumlah || item.jumlah == 0) ? 'text-gray-400 italic text-xs' : 'text-gray-900'">
+                                            {{ item.metode === 'Barang/Material' && (!item.jumlah || item.jumlah == 0) ? 'Wujud Barang' : formatRupiahNumber(item.jumlah) }}
+                                        </td>
                                         <td class="py-3.5 px-4">
                                             <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                                 {{ item.metode }}
                                             </span>
                                         </td>
+                                        <td class="py-3.5 px-4 text-gray-500 truncate max-w-[150px]" :title="item.keterangan">{{ item.keterangan || '-' }}</td>
                                         <td class="py-3.5 px-4 text-center no-print">
                                             <button @click="editData('keluarga', item)" class="text-blue-600 hover:text-blue-800 mx-1 p-1" title="Edit">
                                                 <i class="fa-solid fa-edit text-base"></i>
@@ -350,9 +356,9 @@
 
                     <div v-show="subTabKeluarga === 'rekap'" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center no-print">
-                            <p class="text-xs sm:text-sm text-gray-600 font-medium">Rekapitulasi akumulasi donasi seluruh keluarga berdasarkan Empu.</p>
+                            <p class="text-xs sm:text-sm text-gray-600 font-medium">Rekapitulasi akumulasi uang seluruh keluarga berdasarkan Empu.</p>
                             <div class="text-sm font-bold text-gray-800">
-                                Total: <span class="text-emerald-600">{{ formatRupiah(totalDanaKeluarga) }}</span>
+                                Total Uang: <span class="text-emerald-600">{{ formatRupiah(totalDanaKeluarga) }}</span>
                             </div>
                         </div>
                         
@@ -363,7 +369,7 @@
                                         <th class="py-3.5 px-4 w-12 text-center">No</th>
                                         <th class="py-3.5 px-4">Nama Empu (Sub-Keluarga)</th>
                                         <th class="py-3.5 px-4 text-center">Jumlah Donatur</th>
-                                        <th class="py-3.5 px-4 text-right">Total Akumulasi (Rp)</th>
+                                        <th class="py-3.5 px-4 text-right">Total Akumulasi Uang (Rp)</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-sm">
@@ -381,12 +387,15 @@
                                         <td class="py-3.5 px-4 text-right font-extrabold text-emerald-600 text-base">{{ formatRupiahNumber(empu.totalJumlah) }}</td>
                                     </tr>
                                     <tr class="bg-gray-50 font-extrabold text-gray-900 border-t-2 border-gray-300">
-                                        <td colspan="2" class="py-4 px-4 text-right">TOTAL KESELURUHAN DANA KELUARGA:</td>
+                                        <td colspan="2" class="py-4 px-4 text-right">TOTAL KESELURUHAN UANG KELUARGA:</td>
                                         <td class="py-4 px-4 text-center">{{ donationsKeluarga.length }} Orang</td>
                                         <td class="py-4 px-4 text-right text-lg text-emerald-600">{{ formatRupiahNumber(totalDanaKeluarga) }}</td>
                                     </tr>
                                 </tbody>
                             </table>
+                            <div class="px-4 py-3 bg-gray-50 border-t text-xs text-gray-500 italic">
+                                * Rekapitulasi di atas hanya menghitung akumulasi nominal uang (Tunai/Transfer). Donasi berbentuk Barang/Material murni tidak ikut terjumlah di tabel ini.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -429,12 +438,12 @@
                             <input v-model="searchUmum" type="text" placeholder="Cari nama atau angkatan..." class="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-amber-500 text-sm">
                         </div>
                         <div class="text-sm font-bold text-gray-800 hidden sm:block">
-                            Total: <span class="text-amber-600">{{ formatRupiah(totalDanaUmum) }}</span>
+                            Total Uang: <span class="text-amber-600">{{ formatRupiah(totalDanaUmum) }}</span>
                         </div>
                     </div>
                     
                     <div class="table-container overflow-x-auto w-full">
-                        <table class="w-full text-left border-collapse min-w-[800px]">
+                        <table class="w-full text-left border-collapse min-w-[850px]">
                             <thead>
                                 <tr class="bg-amber-50 text-amber-900 border-b border-gray-200 text-xs sm:text-sm font-bold">
                                     <th class="py-3.5 px-4 w-12 text-center">No</th>
@@ -443,7 +452,7 @@
                                     <th class="py-3.5 px-4">Kategori/Angkatan</th>
                                     <th class="py-3.5 px-4 text-right">Jumlah (Rp)</th>
                                     <th class="py-3.5 px-4">Metode</th>
-                                    <th class="py-3.5 px-4">Keterangan</th>
+                                    <th class="py-3.5 px-4">Keterangan/Barang</th>
                                     <th v-if="isAdmin" class="py-3.5 px-4 text-center no-print w-24">Aksi</th>
                                 </tr>
                             </thead>
@@ -462,7 +471,9 @@
                                         <span v-else>{{ item.nama }}</span>
                                     </td>
                                     <td class="py-3.5 px-4 text-gray-600 font-medium">{{ item.kategoriDetail }}</td>
-                                    <td class="py-3.5 px-4 text-right font-bold text-gray-900">{{ formatRupiahNumber(item.jumlah) }}</td>
+                                    <td class="py-3.5 px-4 text-right font-bold" :class="item.metode === 'Barang/Material' && (!item.jumlah || item.jumlah == 0) ? 'text-gray-400 italic text-xs' : 'text-gray-900'">
+                                        {{ item.metode === 'Barang/Material' && (!item.jumlah || item.jumlah == 0) ? 'Wujud Barang' : formatRupiahNumber(item.jumlah) }}
+                                    </td>
                                     <td class="py-3.5 px-4">
                                         <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                             {{ item.metode }}
@@ -492,13 +503,15 @@
                             {{ isEditing ? 'Edit Data' : 'Tambah Data' }} 
                             {{ modalType === 'keluarga' ? 'Keluarga' : 'Alumni & Umum' }}
                         </h3>
-                        <button @click="closeModal" class="text-white hover:text-gray-200 focus:outline-none">
+                        <button type="button" @click="closeModal" class="text-white hover:text-gray-200 focus:outline-none">
                             <i class="fa-solid fa-xmark text-xl"></i>
                         </button>
                     </div>
                     
                     <div class="p-6 overflow-y-auto">
                         <form @submit.prevent="saveData" class="space-y-4">
+                            
+                            <!-- Bagian Data Pribadi -->
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Terima *</label>
                                 <input v-model="formData.tanggal" type="date" required class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 text-sm font-medium" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'">
@@ -553,19 +566,12 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Donasi (Rp) *</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 text-sm font-semibold">Rp</span>
-                                    </div>
-                                    <input v-model="formattedJumlahInput" @input="formatInputRibuan" type="text" required placeholder="0" class="w-full pl-11 pr-3.5 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 text-right font-bold text-base" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'">
-                                </div>
-                            </div>
+                            <hr class="border-gray-200">
 
+                            <!-- Bagian Keuangan/Barang (Diurutkan sesuai Logika) -->
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Metode Penyerahan</label>
-                                <select v-model="formData.metode" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 text-sm font-medium" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Metode Penyerahan *</label>
+                                <select v-model="formData.metode" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 text-sm font-medium bg-gray-50" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'">
                                     <option value="Tunai">Tunai (Cash)</option>
                                     <option value="Transfer Bank">Transfer Bank</option>
                                     <option value="Barang/Material">Berupa Barang/Material</option>
@@ -573,8 +579,24 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan Tambahan</label>
-                                <textarea v-model="formData.keterangan" rows="2" placeholder="Catatan opsional..." class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 text-sm font-medium" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'"></textarea>
+                                <label class="block text-sm font-semibold mb-1" :class="formData.metode === 'Barang/Material' ? 'text-gray-500' : 'text-gray-700'">
+                                    {{ formData.metode === 'Barang/Material' ? 'Estimasi Nominal Uang (Opsional)' : 'Jumlah Donasi Uang (Rp) *' }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                        <span class="text-sm font-semibold" :class="formData.metode === 'Barang/Material' ? 'text-gray-400' : 'text-gray-500'">Rp</span>
+                                    </div>
+                                    <!-- Menghapus atribut required natif agar Vue bisa menangani opsionalnya -->
+                                    <input v-model="formattedJumlahInput" @input="formatInputRibuan" type="text" placeholder="0" class="w-full pl-11 pr-3.5 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 text-right font-bold text-base" :class="[modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500', formData.metode === 'Barang/Material' ? 'bg-gray-100 text-gray-500' : 'text-gray-900']">
+                                </div>
+                                <p v-if="formData.metode === 'Barang/Material'" class="text-[11px] text-gray-500 mt-1 italic">Kosongkan jika tidak tahu taksiran harga barangnya.</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold mb-1" :class="formData.metode === 'Barang/Material' ? 'text-blue-700' : 'text-gray-700'">
+                                    {{ formData.metode === 'Barang/Material' ? 'Detail Barang & Jumlah (Wajib Diisi) *' : 'Keterangan Tambahan' }}
+                                </label>
+                                <textarea v-model="formData.keterangan" rows="2" :placeholder="formData.metode === 'Barang/Material' ? 'Contoh: 50 Sak Semen, 1 Truk Pasir, 20 Dus Keramik...' : 'Catatan opsional...'" class="w-full px-3.5 py-2.5 border rounded-xl shadow-sm focus:outline-none focus:ring-2 text-sm font-medium" :class="[formData.metode === 'Barang/Material' ? 'border-blue-300 bg-blue-50 focus:border-blue-500 focus:ring-blue-500 placeholder-blue-300' : 'border-gray-300 focus:border-gray-500 focus:ring-gray-500', modalType === 'keluarga' && formData.metode !== 'Barang/Material' ? 'focus:border-blue-500 focus:ring-blue-500' : '', modalType === 'umum' && formData.metode !== 'Barang/Material' ? 'focus:border-amber-500 focus:ring-amber-500' : '']"></textarea>
                             </div>
                         </form>
                     </div>
@@ -661,7 +683,7 @@
     <!-- Integrasi Database Cloud Firebase & History API -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyBdn42Eendw5MGnHGQ74ZkeyUunWuKQ8gV",
@@ -722,7 +744,7 @@
                     alamat: '', 
                     kategoriUmum: 'Alumni', 
                     angkatan: '', 
-                    jumlah: 0,
+                    jumlah: '',
                     metode: 'Tunai',
                     keterangan: '',
                     isAnonim: false
@@ -742,6 +764,7 @@
                         currentTab.value = event.state.tab;
                     } else {
                         currentTab.value = 'dashboard';
+                        window.history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
                     }
                 };
 
@@ -764,13 +787,13 @@
                 };
 
                 const formatNumberOnly = (val) => {
-                    if(val === null || val === undefined) return '';
+                    if(val === null || val === undefined || val === '') return '';
                     return val.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                 };
 
                 const formatInputRibuan = (event) => {
                     let val = event.target.value.replace(/\D/g, "");
-                    formData.value.jumlah = parseInt(val) || 0;
+                    formData.value.jumlah = val === '' ? '' : parseInt(val);
                     formattedJumlahInput.value = formatNumberOnly(val);
                 };
 
@@ -844,7 +867,8 @@
                     return donationsKeluarga.value.filter(item => 
                         (item.namaIndividu && item.namaIndividu.toLowerCase().includes(term)) || 
                         (item.namaEmpu && item.namaEmpu.toLowerCase().includes(term)) ||
-                        (item.alamat && item.alamat.toLowerCase().includes(term))
+                        (item.alamat && item.alamat.toLowerCase().includes(term)) ||
+                        (item.keterangan && item.keterangan.toLowerCase().includes(term))
                     ).sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
                 });
 
@@ -872,7 +896,8 @@
                     return withDetail.filter(item => 
                         item.nama.toLowerCase().includes(term) || 
                         (item.angkatan && item.angkatan.toLowerCase().includes(term)) ||
-                        item.kategoriUmum.toLowerCase().includes(term)
+                        item.kategoriUmum.toLowerCase().includes(term) ||
+                        (item.keterangan && item.keterangan.toLowerCase().includes(term))
                     );
                 });
 
@@ -942,19 +967,30 @@
                     isEditing.value = true;
                     editingId.value = item.id;
                     formData.value = { ...item };
-                    formattedJumlahInput.value = formatNumberOnly(item.jumlah);
+                    formattedJumlahInput.value = item.jumlah && item.jumlah > 0 ? formatNumberOnly(item.jumlah) : '';
                     showModal.value = true;
                 };
 
                 const saveData = async () => {
-                    if (modalType.value === 'keluarga' && (!formData.value.namaEmpu || !formData.value.namaIndividu || !formData.value.tanggal || !formData.value.jumlah)) {
+                    // Validasi Mandatory
+                    if (modalType.value === 'keluarga' && (!formData.value.namaEmpu || !formData.value.namaIndividu || !formData.value.tanggal)) {
                         return showToast('Harap lengkapi field wajib (*)', 'error');
                     }
-                    if (modalType.value === 'umum' && (!formData.value.nama || !formData.value.tanggal || !formData.value.jumlah)) {
+                    if (modalType.value === 'umum' && (!formData.value.nama || !formData.value.tanggal)) {
                         return showToast('Harap lengkapi field wajib (*)', 'error');
                     }
 
+                    // Validasi Berdasarkan Metode Penyerahan
+                    if (formData.value.metode !== 'Barang/Material' && !formData.value.jumlah) {
+                        return showToast('Jumlah donasi uang wajib diisi!', 'error');
+                    }
+                    if (formData.value.metode === 'Barang/Material' && !formData.value.keterangan) {
+                        return showToast('Untuk donasi barang, Detail Barang wajib diisi!', 'error');
+                    }
+
                     const newData = { ...formData.value };
+                    // Pastikan jumlah disimpan sebagai integer atau 0 (jika barang & tidak diisi nominalnya)
+                    newData.jumlah = parseInt(newData.jumlah) || 0;
                     delete newData.id;
 
                     try {
@@ -1004,7 +1040,6 @@
                 };
 
                 onMounted(() => {
-                    // Initialize browser history state
                     window.history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
                     window.addEventListener('popstate', handlePopState);
 
@@ -1069,7 +1104,7 @@
                         if(data.length === 0) return showToast('Tidak ada data untuk diekspor.', 'error');
                         
                         let csvContent = "data:text/csv;charset=utf-8,";
-                        csvContent += "No,Nama Empu (Sub-Keluarga),Jumlah Donatur,Total Akumulasi\n";
+                        csvContent += "No,Nama Empu (Sub-Keluarga),Jumlah Donatur,Total Akumulasi Uang\n";
                         data.forEach((row, index) => {
                             let cleanEmpu = row.empu.replace(/,/g, '');
                             csvContent += `${index+1},${cleanEmpu},${row.totalDonatur},${row.totalJumlah}\n`;
@@ -1092,20 +1127,22 @@
 
                     let csvContent = "data:text/csv;charset=utf-8,";
                     if (type === 'keluarga') {
-                        csvContent += "No,Tanggal,Nama Empu,Nama Individu,Alamat,Jumlah,Metode,Keterangan\n";
+                        csvContent += "No,Tanggal,Nama Empu,Nama Individu,Alamat,Jumlah/Estimasi (Rp),Metode,Keterangan/Barang\n";
                         data.forEach((row, index) => {
                             let cleanEmpu = (row.namaEmpu || '').replace(/,/g, '');
                             let cleanIndividu = (row.namaIndividu || row.nama || '').replace(/,/g, '');
                             let cleanAlamat = (row.alamat || '').replace(/,/g, '');
                             let cleanKeterangan = (row.keterangan || '').replace(/,/g, '');
-                            csvContent += `${index+1},${row.tanggal},${cleanEmpu},${cleanIndividu},${cleanAlamat},${row.jumlah},${row.metode},${cleanKeterangan}\n`;
+                            let displayJumlah = (row.metode === 'Barang/Material' && (!row.jumlah || row.jumlah == 0)) ? 'Wujud Barang' : row.jumlah;
+                            csvContent += `${index+1},${row.tanggal},${cleanEmpu},${cleanIndividu},${cleanAlamat},${displayJumlah},${row.metode},${cleanKeterangan}\n`;
                         });
                     } else {
-                        csvContent += "No,Tanggal,Nama/Instansi,Kategori/Angkatan,Jumlah,Metode,Keterangan\n";
+                        csvContent += "No,Tanggal,Nama/Instansi,Kategori/Angkatan,Jumlah/Estimasi (Rp),Metode,Keterangan/Barang\n";
                         data.forEach((row, index) => {
                             let cleanKat = (row.kategoriDetail || '').replace(/,/g, '');
                             let cleanKeterangan = (row.keterangan || '').replace(/,/g, '');
-                            csvContent += `${index+1},${row.tanggal},${row.nama},${cleanKat},${row.jumlah},${row.metode},${cleanKeterangan}\n`;
+                            let displayJumlah = (row.metode === 'Barang/Material' && (!row.jumlah || row.jumlah == 0)) ? 'Wujud Barang' : row.jumlah;
+                            csvContent += `${index+1},${row.tanggal},${row.nama},${cleanKat},${displayJumlah},${row.metode},${cleanKeterangan}\n`;
                         });
                     }
 
@@ -1148,14 +1185,15 @@
                         if (subTabKeluarga.value === 'individu') {
                             let total = 0;
                             dataList.forEach((r, i) => {
-                                tableData.push([i+1, formatDate(r.tanggal), r.namaEmpu || '-', r.namaIndividu || r.nama || '-', formatRupiahNumber(r.jumlah)]);
-                                total += parseInt(r.jumlah);
+                                let displayJumlah = (r.metode === 'Barang/Material' && (!r.jumlah || r.jumlah == 0)) ? 'Barang' : formatRupiahNumber(r.jumlah);
+                                tableData.push([i+1, formatDate(r.tanggal), r.namaEmpu || '-', r.namaIndividu || r.nama || '-', displayJumlah, r.keterangan || '-']);
+                                total += parseInt(r.jumlah || 0);
                             });
-                            tableData.push([{content: 'TOTAL', colSpan: 4, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}]);
+                            tableData.push([{content: 'TOTAL UANG', colSpan: 4, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}, '']);
                             
                             doc.autoTable({
                                 startY: 34,
-                                head: [['No', 'Tanggal', 'Nama Empu', 'Nama Individu', 'Jumlah (Rp)']],
+                                head: [['No', 'Tanggal', 'Nama Empu', 'Nama Individu', 'Jumlah (Rp)', 'Keterangan']],
                                 body: tableData,
                                 theme: 'grid',
                                 headStyles: { fillColor: [37, 99, 235] } 
@@ -1167,11 +1205,11 @@
                                 tableData.push([i+1, r.empu, `${r.totalDonatur} Org`, formatRupiahNumber(r.totalJumlah)]);
                                 total += parseInt(r.totalJumlah);
                             });
-                            tableData.push([{content: 'TOTAL KESELURUHAN', colSpan: 3, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}]);
+                            tableData.push([{content: 'TOTAL KESELURUHAN UANG', colSpan: 3, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}]);
                             
                             doc.autoTable({
                                 startY: 34,
-                                head: [['No', 'Nama Empu (Sub-Keluarga)', 'Jml Donatur', 'Total Akumulasi (Rp)']],
+                                head: [['No', 'Nama Empu (Sub-Keluarga)', 'Jml Donatur', 'Total Akumulasi Uang (Rp)']],
                                 body: tableData,
                                 theme: 'grid',
                                 headStyles: { fillColor: [16, 185, 129] } 
@@ -1180,14 +1218,15 @@
                     } else {
                         let total = 0;
                         dataList.forEach((r, i) => {
-                            tableData.push([i+1, formatDate(r.tanggal), r.nama, r.kategoriDetail || '-', formatRupiahNumber(r.jumlah), r.metode]);
-                            total += parseInt(r.jumlah);
+                            let displayJumlah = (r.metode === 'Barang/Material' && (!r.jumlah || r.jumlah == 0)) ? 'Barang' : formatRupiahNumber(r.jumlah);
+                            tableData.push([i+1, formatDate(r.tanggal), r.nama, r.kategoriDetail || '-', displayJumlah, r.keterangan || '-']);
+                            total += parseInt(r.jumlah || 0);
                         });
-                        tableData.push([{content: 'TOTAL', colSpan: 4, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}, '']);
+                        tableData.push([{content: 'TOTAL UANG', colSpan: 4, styles: {halign: 'right', fontStyle: 'bold'}}, {content: formatRupiahNumber(total), styles: {fontStyle: 'bold'}}, '']);
                         
                         doc.autoTable({
                             startY: 34,
-                            head: [['No', 'Tanggal', 'Nama', 'Kategori', 'Jumlah (Rp)', 'Metode']],
+                            head: [['No', 'Tanggal', 'Nama', 'Kategori', 'Jumlah (Rp)', 'Keterangan']],
                             body: tableData,
                             theme: 'grid',
                             headStyles: { fillColor: [217, 119, 6] } 

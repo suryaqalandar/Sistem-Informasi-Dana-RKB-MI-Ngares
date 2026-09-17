@@ -203,7 +203,7 @@
                         </a>
                         
                         <a href="https://drive.google.com/drive/folders/1YoqgsMSuaCNDpriCjOJ8YLqkx8WT3ois" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 py-3.5 px-4 rounded-xl transition font-semibold text-xs sm:text-sm shadow-sm">
-                            <i class="fa-solid fa-person-digging text-base text-purple-600"></i> Lihat Progres Pembangunan
+                            <i class="fa-solid fa-person-digging text-base text-purple-600"></i> Lihat Progres
                         </a>
                     </div>
                     <p class="text-[11px] text-gray-400 mt-3 text-center sm:text-left italic">* Tautan di atas membuka dokumen resmi melalui Google Drive.</p>
@@ -216,24 +216,28 @@
                         Belum ada data donasi tercatat.
                     </div>
                     <div v-else class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                        <div v-for="(donasi, index) in recentDonations" :key="index" class="flex justify-between items-center p-3.5 hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-100 transition">
-                            <div class="flex items-center gap-3.5">
+                        <div v-for="(donasi, index) in recentDonations" :key="index" class="flex justify-between items-center p-3.5 hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-100 transition gap-3">
+                            <div class="flex items-center gap-3.5 min-w-0 flex-1">
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm flex-shrink-0" :class="donasi.kategori === 'Keluarga' ? 'bg-blue-500' : 'bg-amber-500'">
                                     <i class="fa-solid" :class="donasi.kategori === 'Keluarga' ? 'fa-user' : 'fa-users'"></i>
                                 </div>
-                                <div>
-                                    <p class="font-bold text-gray-800 text-sm">{{ donasi.nama }}</p>
-                                    <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-bold text-gray-800 text-sm truncate">{{ donasi.nama }}</p>
+                                    <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5 truncate">
                                         <span>{{ formatDate(donasi.tanggal) }}</span>
                                         <span>•</span>
                                         <span :class="donasi.kategori === 'Keluarga' ? 'text-blue-600 font-semibold' : 'text-amber-600 font-semibold'">{{ donasi.kategori }}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-right whitespace-nowrap">
-                                <p v-if="donasi.metode === 'Barang/Material' && (!donasi.jumlah || donasi.jumlah == 0)" class="font-bold text-gray-500 text-sm sm:text-base italic">Wujud Barang</p>
-                                <p v-else class="font-bold text-emerald-600 text-sm sm:text-base">+ {{ formatRupiah(donasi.jumlah) }}</p>
-                                <p class="text-[11px] text-gray-400 capitalize">{{ donasi.metode }}</p>
+                            <!-- Penyesuaian lebar dan pemotongan teks untuk barang material agar tidak merusak layout -->
+                            <div class="text-right flex-shrink-0 max-w-[130px] sm:max-w-[250px] flex flex-col justify-center items-end">
+                                <p v-if="donasi.metode === 'Barang/Material' && (!donasi.jumlah || donasi.jumlah == 0)" 
+                                   class="font-bold text-gray-600 text-xs sm:text-sm truncate w-full" 
+                                   :title="donasi.keterangan">{{ donasi.keterangan || 'Wujud Barang' }}</p>
+                                <p v-else class="font-bold text-emerald-600 text-sm sm:text-base whitespace-nowrap">+ {{ formatRupiah(donasi.jumlah) }}</p>
+                                
+                                <p class="text-[11px] text-gray-400 capitalize whitespace-nowrap">{{ donasi.metode }}</p>
                             </div>
                         </div>
                     </div>
@@ -339,8 +343,8 @@
                                                 {{ item.metode }}
                                             </span>
                                         </td>
-                                        <td class="py-3.5 px-4 text-gray-500 truncate max-w-[150px]" :title="item.keterangan">{{ item.keterangan || '-' }}</td>
-                                        <td class="py-3.5 px-4 text-center no-print">
+                                        <td class="py-3.5 px-4 text-gray-500 max-w-[150px]"><span class="line-clamp-2" :title="item.keterangan">{{ item.keterangan || '-' }}</span></td>
+                                        <td class="py-3.5 px-4 text-center no-print whitespace-nowrap">
                                             <button @click="editData('keluarga', item)" class="text-blue-600 hover:text-blue-800 mx-1 p-1" title="Edit">
                                                 <i class="fa-solid fa-edit text-base"></i>
                                             </button>
@@ -479,8 +483,8 @@
                                             {{ item.metode }}
                                         </span>
                                     </td>
-                                    <td class="py-3.5 px-4 text-gray-500 truncate max-w-[150px]" :title="item.keterangan">{{ item.keterangan || '-' }}</td>
-                                    <td v-if="isAdmin" class="py-3.5 px-4 text-center no-print">
+                                    <td class="py-3.5 px-4 text-gray-500 max-w-[150px]"><span class="line-clamp-2" :title="item.keterangan">{{ item.keterangan || '-' }}</span></td>
+                                    <td v-if="isAdmin" class="py-3.5 px-4 text-center no-print whitespace-nowrap">
                                         <button @click="editData('umum', item)" class="text-blue-600 hover:text-blue-800 mx-1 p-1" title="Edit">
                                             <i class="fa-solid fa-edit text-base"></i>
                                         </button>
@@ -568,7 +572,7 @@
 
                             <hr class="border-gray-200">
 
-                            <!-- Bagian Keuangan/Barang (Diurutkan sesuai Logika) -->
+                            <!-- Bagian Keuangan/Barang -->
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Metode Penyerahan *</label>
                                 <select v-model="formData.metode" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 text-sm font-medium bg-gray-50" :class="modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500'">
@@ -586,7 +590,6 @@
                                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                         <span class="text-sm font-semibold" :class="formData.metode === 'Barang/Material' ? 'text-gray-400' : 'text-gray-500'">Rp</span>
                                     </div>
-                                    <!-- Menghapus atribut required natif agar Vue bisa menangani opsionalnya -->
                                     <input v-model="formattedJumlahInput" @input="formatInputRibuan" type="text" placeholder="0" class="w-full pl-11 pr-3.5 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 text-right font-bold text-base" :class="[modalType === 'keluarga' ? 'focus:border-blue-500 focus:ring-blue-500' : 'focus:border-amber-500 focus:ring-amber-500', formData.metode === 'Barang/Material' ? 'bg-gray-100 text-gray-500' : 'text-gray-900']">
                                 </div>
                                 <p v-if="formData.metode === 'Barang/Material'" class="text-[11px] text-gray-500 mt-1 italic">Kosongkan jika tidak tahu taksiran harga barangnya.</p>
@@ -655,7 +658,7 @@
                 </div>
             </div>
 
-            <!-- Login Modal Admin -->
+            <!-- Login Modal Admin (Default Tertutup) -->
             <div v-if="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 no-print backdrop-blur-sm transition-opacity">
                 <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
                     <div class="px-6 py-4 border-b bg-gray-900 text-white flex justify-between items-center">

@@ -129,19 +129,20 @@
                 <!-- Banner Judul dengan Gambar Latar Samar -->
                 <div class="relative bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 overflow-hidden flex flex-col sm:flex-row justify-between items-center gap-6 mt-4 sm:mt-2">
                     <!-- Background Image Overlay -->
-                    <div class="absolute inset-0 z-0">
-                        <div class="absolute inset-0 bg-white/85 z-10 backdrop-blur-[1px]"></div>
-                        <!-- Pastikan path gambar sesuai dengan yang Anda buat di GitHub -->
-                        <img src="./assets/bg-sekolah.jpg" alt="Background MI WB Ngares" class="w-full h-full object-cover object-center opacity-60">
+                    <div class="absolute inset-0 z-0 bg-emerald-900">
+                        <!-- Lapisan putih dikurangi menjadi 60% dan blur ditambahkan agar gambar lebih jelas -->
+                        <div class="absolute inset-0 bg-white/60 z-10 backdrop-blur-[1px]"></div>
+                        <!-- Opacity gambar dihilangkan agar tampil 100% dari bawah overlay -->
+                        <img src="./assets/bg-sekolah.jpg" alt="Background MI WB Ngares" class="w-full h-full object-cover object-center">
                     </div>
 
                     <!-- Konten Teks (di atas gambar) -->
                     <div class="relative z-10 text-center sm:text-left w-full">
-                        <h2 class="text-2xl sm:text-3xl font-extrabold text-emerald-900 tracking-tight drop-shadow-sm">Sistem Informasi Penggalangan Dana</h2>
-                        <p class="text-gray-800 text-sm sm:text-base mt-2 font-semibold">Pembangunan Ruang Kelas Baru (RKB) MI WB Ngares, Trenggalek</p>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-emerald-900 tracking-tight drop-shadow-md">Sistem Informasi Penggalangan Dana</h2>
+                        <p class="text-gray-900 text-sm sm:text-base mt-2 font-bold drop-shadow-sm">Pembangunan Ruang Kelas Baru (RKB) MI WB Ngares, Trenggalek</p>
                     </div>
                     <div class="relative z-10 flex gap-2 w-full sm:w-auto justify-center sm:justify-end flex-shrink-0">
-                         <button v-if="isAdmin" @click="showSettingsModal = true" class="bg-white/90 backdrop-blur hover:bg-white text-gray-800 px-4 py-2.5 rounded-xl shadow-sm transition text-sm font-bold flex items-center gap-2 border border-gray-300">
+                         <button v-if="isAdmin" @click="showSettingsModal = true" class="bg-white/95 backdrop-blur hover:bg-white text-gray-800 px-4 py-2.5 rounded-xl shadow-sm transition text-sm font-bold flex items-center gap-2 border border-gray-300">
                             <i class="fa-solid fa-cog"></i> Pengaturan Target
                         </button>
                     </div>
@@ -225,14 +226,14 @@
                         Belum ada data donasi tercatat.
                     </div>
                     <div v-else class="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-                        <div v-for="(donasi, index) in recentDonations" :key="index" class="flex justify-between items-center p-3.5 hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-100 transition gap-3">
-                            <div class="flex items-center gap-3.5 min-w-0 flex-1">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm flex-shrink-0" :class="donasi.kategori === 'Keluarga' ? 'bg-blue-500' : 'bg-amber-500'">
-                                    <i class="fa-solid" :class="donasi.kategori === 'Keluarga' ? 'fa-user' : 'fa-users'"></i>
+                        <div v-for="(donasi, index) in recentDonations" :key="index" class="flex justify-between items-start p-3.5 hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-100 transition gap-3">
+                            <div class="flex items-start gap-3.5 min-w-0 flex-1">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm flex-shrink-0 mt-1" :class="donasi.kategoriDetail === 'Keluarga' ? 'bg-blue-500' : 'bg-amber-500'">
+                                    <i class="fa-solid" :class="donasi.kategoriDetail === 'Keluarga' ? 'fa-user' : 'fa-users'"></i>
                                 </div>
                                 <div class="min-w-0 flex-1 leading-tight flex flex-col justify-center">
                                     <p class="font-bold text-gray-800 text-sm truncate" :title="donasi.nama">{{ donasi.nama }}</p>
-                                    <p class="text-[11px] mt-0.5 truncate" :class="donasi.kategori === 'Keluarga' ? 'text-blue-600 font-semibold' : 'text-amber-600 font-semibold'">{{ donasi.kategori }}</p>
+                                    <p class="text-[11px] mt-1 truncate" :class="donasi.kategoriDetail === 'Keluarga' ? 'text-blue-600 font-semibold' : 'text-amber-600 font-semibold'">{{ donasi.kategoriDetail }}</p>
                                     <p class="text-[11px] text-gray-400 mt-0.5 truncate">{{ formatDate(donasi.tanggal) }}</p>
                                 </div>
                             </div>
@@ -240,7 +241,7 @@
                             <div class="text-right flex-shrink-0 max-w-[140px] sm:max-w-[250px] flex flex-col justify-center items-end">
                                 <!-- Modifikasi tampilan nominal khusus Barang -->
                                 <p v-if="donasi.metode === 'Barang/Material' && (!donasi.jumlah || donasi.jumlah == 0)" 
-                                   class="font-bold text-gray-600 text-xs sm:text-sm truncate w-full" 
+                                   class="font-bold text-gray-600 text-xs sm:text-sm truncate w-full max-w-[120px] sm:max-w-[200px]" 
                                    :title="donasi.keterangan">{{ donasi.keterangan || 'Wujud Barang' }}</p>
                                 <p v-else class="font-bold text-emerald-600 text-sm sm:text-base whitespace-nowrap">+ {{ formatRupiah(donasi.jumlah) }}</p>
                                 
@@ -670,7 +671,7 @@
                 <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
                     <div class="px-6 py-4 border-b bg-gray-900 text-white flex justify-between items-center">
                         <h3 class="text-lg font-bold">Login Admin</h3>
-                        <button @click="showLoginModal = false" class="text-gray-300 hover:text-white focus:outline-none">
+                        <button @click="closeLoginModal" class="text-gray-300 hover:text-white focus:outline-none">
                             <i class="fa-solid fa-xmark text-xl"></i>
                         </button>
                     </div>
@@ -729,7 +730,6 @@
                 const isKeluargaUnlocked = ref(false);
                 const keluargaPassword = ref('');
 
-                // MENGUBAH PASSWORD MENJADI KODE ASCII (ANGKA) AGAR TIDAK TERBACA OLEH PUBLIK
                 // Kata sandi admin terenkripsi
                 const ADMIN_SECRET = [97, 100, 109, 105, 110, 114, 107, 98, 49, 50, 51]; 
                 
@@ -742,6 +742,11 @@
                         if (input.charCodeAt(i) !== secretArray[i]) return false;
                     }
                     return true;
+                };
+
+                const closeLoginModal = () => {
+                    showLoginModal.value = false;
+                    adminPassword.value = '';
                 };
 
                 const donationsKeluarga = ref([]);
@@ -881,12 +886,12 @@
                         ...donationsKeluarga.value.map(d => ({ 
                             ...d, 
                             nama: isAdmin.value ? (d.namaIndividu || d.nama) : 'Keluarga Besar', 
-                            kategori: 'Keluarga' 
+                            kategoriDetail: 'Keluarga' 
                         })),
                         ...donationsUmum.value.map(d => ({ 
                             ...d, 
                             nama: d.isAnonim ? (isAdmin.value ? `${d.nama} (Anonim)` : '***') : d.nama,
-                            kategori: d.kategoriDetail || d.kategoriUmum
+                            kategoriDetail: d.kategoriUmum === 'Alumni' && d.angkatan ? `Alumni - ${d.angkatan}` : (d.angkatan ? `${d.kategoriUmum} - ${d.angkatan}` : d.kategoriUmum)
                         }))
                     ];
                     return combined
@@ -1283,7 +1288,7 @@
                 };
 
                 return {
-                    isAdmin, showLoginModal, adminPassword, loginAdmin, logoutAdmin,
+                    isAdmin, showLoginModal, adminPassword, loginAdmin, logoutAdmin, closeLoginModal,
                     isKeluargaUnlocked, keluargaPassword, unlockKeluarga,
                     currentTab, subTabKeluarga, switchTab, mobileMenuOpen,
                     donationsKeluarga, donationsUmum,

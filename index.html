@@ -719,7 +719,22 @@
                 
                 const isKeluargaUnlocked = ref(false);
                 const keluargaPassword = ref('');
-                const KELUARGA_PASS = 'kudurukun';
+
+                // MENGUBAH PASSWORD MENJADI KODE ASCII (ANGKA) AGAR TIDAK TERBACA
+                // [97, 100, 109, 105, 110, 114, 107, 98, 49, 50, 51] = 'adminrkb123'
+                const ADMIN_SECRET = [97, 100, 109, 105, 110, 114, 107, 98, 49, 50, 51]; 
+                
+                // [107, 117, 100, 117, 114, 117, 107, 117, 110] = 'kudurukun'
+                const KELUARGA_SECRET = [107, 117, 100, 117, 114, 117, 107, 117, 110];
+
+                // Fungsi penyandian untuk mencocokkan input dengan deretan angka
+                const checkPassword = (input, secretArray) => {
+                    if (input.length !== secretArray.length) return false;
+                    for (let i = 0; i < input.length; i++) {
+                        if (input.charCodeAt(i) !== secretArray[i]) return false;
+                    }
+                    return true;
+                };
 
                 const donationsKeluarga = ref([]);
                 const donationsUmum = ref([]);
@@ -908,7 +923,7 @@
                 });
 
                 const unlockKeluarga = () => {
-                    if (keluargaPassword.value === KELUARGA_PASS) {
+                    if (checkPassword(keluargaPassword.value, KELUARGA_SECRET)) {
                         isKeluargaUnlocked.value = true;
                         sessionStorage.setItem('rkb_keluarga_unlocked', 'true');
                         subTabKeluarga.value = 'rekap';
@@ -920,7 +935,7 @@
                 };
 
                 const loginAdmin = () => {
-                    if (adminPassword.value === ADMIN_PASS) {
+                    if (checkPassword(adminPassword.value, ADMIN_SECRET)) {
                         isAdmin.value = true;
                         sessionStorage.setItem('rkb_is_admin', 'true');
                         showLoginModal.value = false;

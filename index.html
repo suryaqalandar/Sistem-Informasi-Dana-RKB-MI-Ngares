@@ -38,30 +38,6 @@
         .table-container::-webkit-scrollbar-thumb:hover, .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8; 
         }
-        
-        /* Glassmorphism Menu Style */
-        .btn-glass {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.2);
-            color: #d1fae5; /* emerald-100 */
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .btn-glass:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
-        .btn-glass.active {
-            background: rgba(255, 255, 255, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            color: #ffffff;
-            font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.5);
-        }
 
         @media print {
             body { background-color: white; }
@@ -93,8 +69,8 @@
     <div id="app" class="min-h-screen flex flex-col h-screen overflow-hidden" v-cloak>
         
         <!-- Header / Navigation -->
-        <header class="bg-emerald-800 text-white shadow-lg no-print z-50 relative">
-            <div class="container mx-auto px-4 py-3 flex justify-between items-center relative z-50">
+        <header class="bg-emerald-800 text-white shadow-lg no-print z-10">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center gap-2 sm:gap-3 cursor-pointer" @click="switchTab('dashboard')">
                     <img src="https://lh3.googleusercontent.com/d/1hRTEPPOA7fBw8O9k6Wz2mYStk1fEpF81" alt="Logo MI WB Ngares" 
                          onerror="this.onerror=null; this.src='https://placehold.co/100x100/047857/ffffff?text=MI';"
@@ -104,43 +80,38 @@
                         <p class="text-emerald-200 text-[10px] sm:text-xs">MI WB Ngares, Trenggalek</p>
                     </div>
                 </div>
-                
-                <!-- Desktop Nav (Glassmorphism) -->
-                <nav class="hidden md:flex gap-3 items-center">
-                    <button @click="switchTab('dashboard')" :class="{'active': currentTab === 'dashboard'}" class="btn-glass px-5 py-2 rounded-full text-sm">Dashboard</button>
-                    <button @click="switchTab('keluarga')" :class="{'active': currentTab === 'keluarga'}" class="btn-glass px-5 py-2 rounded-full text-sm">Dana Keluarga</button>
-                    <button @click="switchTab('umum')" :class="{'active': currentTab === 'umum'}" class="btn-glass px-5 py-2 rounded-full text-sm">Dana Alumni & Umum</button>
+                <nav class="hidden md:flex gap-6 items-center">
+                    <button @click="switchTab('dashboard')" :class="{'border-b-2 border-white': currentTab === 'dashboard'}" class="pb-1 hover:text-emerald-200 transition">Dashboard</button>
+                    <button @click="switchTab('keluarga')" :class="{'border-b-2 border-white': currentTab === 'keluarga'}" class="pb-1 hover:text-emerald-200 transition">Dana Keluarga</button>
+                    <button @click="switchTab('umum')" :class="{'border-b-2 border-white': currentTab === 'umum'}" class="pb-1 hover:text-emerald-200 transition">Dana Alumni & Umum</button>
                     
-                    <button v-if="!isAdmin" @click="showLoginModal = true" class="bg-gray-900 hover:bg-black px-4 py-2 rounded-full text-sm transition text-white shadow-md border border-gray-700 ml-3 font-semibold tracking-wide flex items-center gap-2">
+                    <button v-if="!isAdmin" @click="showLoginModal = true" class="bg-gray-900 hover:bg-black px-4 py-1.5 rounded-lg text-sm transition text-white shadow-md border border-gray-700 ml-4 font-semibold tracking-wide flex items-center gap-2">
                         <i class="fa-solid fa-lock text-xs text-amber-400"></i> Login Admin
                     </button>
-                    <button v-else @click="logoutAdmin" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded-full text-sm transition text-white ml-3 shadow-md border border-red-500 font-semibold tracking-wide flex items-center gap-2">
+                    <button v-else @click="logoutAdmin" class="bg-red-700 hover:bg-red-800 px-4 py-1.5 rounded-lg text-sm transition text-white ml-4 shadow-md border border-red-500 font-semibold tracking-wide flex items-center gap-2">
                         <i class="fa-solid fa-unlock text-xs"></i> Logout Admin
                     </button>
                 </nav>
-                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-white focus:outline-none p-2 rounded-full hover:bg-white/10 transition">
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-white focus:outline-none">
                     <i class="fa-solid fa-bars text-2xl"></i>
                 </button>
             </div>
             
-            <!-- Mobile Nav (Glassmorphism) -->
-            <transition name="fade">
-                <div v-show="mobileMenuOpen" class="md:hidden absolute top-full left-0 w-full bg-emerald-800/95 backdrop-blur-md px-4 pt-4 pb-6 space-y-3 shadow-2xl border-t border-white/10 z-40">
-                    <button @click="switchTab('dashboard')" class="block w-full text-left py-3.5 px-5 rounded-2xl btn-glass" :class="{'active': currentTab === 'dashboard'}">Dashboard</button>
-                    <button @click="switchTab('keluarga')" class="block w-full text-left py-3.5 px-5 rounded-2xl btn-glass" :class="{'active': currentTab === 'keluarga'}">Dana Keluarga</button>
-                    <button @click="switchTab('umum')" class="block w-full text-left py-3.5 px-5 rounded-2xl btn-glass" :class="{'active': currentTab === 'umum'}">Dana Alumni & Umum</button>
-                    
-                    <hr class="border-white/20 my-3">
-                    <button v-if="!isAdmin" @click="showLoginModal = true; mobileMenuOpen = false" class="block w-full text-left py-3.5 px-5 rounded-2xl bg-gray-900/90 backdrop-blur hover:bg-black text-white font-bold shadow-lg border border-gray-700 flex items-center justify-between transition">
-                        <span>Login Admin</span>
-                        <i class="fa-solid fa-lock text-amber-400"></i>
-                    </button>
-                    <button v-else @click="logoutAdmin(); mobileMenuOpen = false" class="block w-full text-left py-3.5 px-5 rounded-2xl bg-red-700/90 backdrop-blur hover:bg-red-800 text-white font-bold shadow-lg border border-red-500 flex items-center justify-between transition">
-                        <span>Logout Admin</span>
-                        <i class="fa-solid fa-unlock"></i>
-                    </button>
-                </div>
-            </transition>
+            <div v-show="mobileMenuOpen" class="md:hidden bg-emerald-700 px-4 pt-3 pb-5 space-y-3 shadow-inner">
+                <button @click="switchTab('dashboard')" class="block w-full text-left py-2.5 px-3 rounded-md transition" :class="{'bg-emerald-900 font-semibold shadow': currentTab === 'dashboard'}">Dashboard</button>
+                <button @click="switchTab('keluarga')" class="block w-full text-left py-2.5 px-3 rounded-md transition" :class="{'bg-emerald-900 font-semibold shadow': currentTab === 'keluarga'}">Dana Keluarga</button>
+                <button @click="switchTab('umum')" class="block w-full text-left py-2.5 px-3 rounded-md transition" :class="{'bg-emerald-900 font-semibold shadow': currentTab === 'umum'}">Dana Alumni & Umum</button>
+                
+                <hr class="border-emerald-600 my-2">
+                <button v-if="!isAdmin" @click="showLoginModal = true; mobileMenuOpen = false" class="block w-full text-left py-3 px-3 rounded-lg bg-gray-900 hover:bg-black text-white font-bold shadow-lg border border-gray-700 flex items-center justify-between">
+                    <span>Login Admin</span>
+                    <i class="fa-solid fa-lock text-amber-400"></i>
+                </button>
+                <button v-else @click="logoutAdmin(); mobileMenuOpen = false" class="block w-full text-left py-3 px-3 rounded-lg bg-red-700 text-white font-bold shadow-lg border border-red-500 flex items-center justify-between">
+                    <span>Logout Admin</span>
+                    <i class="fa-solid fa-unlock"></i>
+                </button>
+            </div>
         </header>
 
         <!-- Main Content Area -->
@@ -159,7 +130,7 @@
                 <div class="relative bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 overflow-hidden flex flex-col sm:flex-row justify-between items-center gap-6 mt-4 sm:mt-2">
                     <!-- Background Image Overlay -->
                     <div class="absolute inset-0 z-0 bg-emerald-900">
-                        <div class="absolute inset-0 bg-white/40 z-10 backdrop-blur-[1px]"></div>
+                        <div class="absolute inset-0 bg-white/60 z-10 backdrop-blur-[1px]"></div>
                         <img src="./assets/bg-sekolah.jpg" alt="Background MI WB Ngares" class="w-full h-full object-cover object-center">
                     </div>
 
@@ -426,7 +397,7 @@
                                             {{ item.metode === 'Barang/Material' && (!item.jumlah || item.jumlah == 0) ? 'Wujud Barang' : formatRupiahNumber(item.jumlah) }}
                                         </td>
                                         <td class="py-3.5 px-4">
-                                            <span class="inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                                 {{ item.metode }}
                                             </span>
                                         </td>
@@ -566,7 +537,7 @@
                                         {{ item.metode === 'Barang/Material' && (!item.jumlah || item.jumlah == 0) ? 'Wujud Barang' : formatRupiahNumber(item.jumlah) }}
                                     </td>
                                     <td class="py-3.5 px-4">
-                                        <span class="inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                             {{ item.metode }}
                                         </span>
                                     </td>

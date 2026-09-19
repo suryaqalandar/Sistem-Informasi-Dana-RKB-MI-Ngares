@@ -93,8 +93,8 @@
     <div id="app" class="min-h-screen flex flex-col h-screen overflow-hidden" v-cloak>
         
         <!-- Header / Navigation -->
-        <header class="bg-emerald-800 text-white shadow-lg no-print z-10 relative">
-            <div class="container mx-auto px-4 py-3 flex justify-between items-center relative z-20">
+        <header class="bg-emerald-800 text-white shadow-lg no-print z-50 relative">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center relative z-50">
                 <div class="flex items-center gap-2 sm:gap-3 cursor-pointer" @click="switchTab('dashboard')">
                     <img src="https://lh3.googleusercontent.com/d/1hRTEPPOA7fBw8O9k6Wz2mYStk1fEpF81" alt="Logo MI WB Ngares" 
                          onerror="this.onerror=null; this.src='https://placehold.co/100x100/047857/ffffff?text=MI';"
@@ -125,7 +125,7 @@
             
             <!-- Mobile Nav (Glassmorphism) -->
             <transition name="fade">
-                <div v-show="mobileMenuOpen" class="md:hidden absolute top-full left-0 w-full bg-emerald-800/95 backdrop-blur-md px-4 pt-4 pb-6 space-y-3 shadow-2xl border-t border-white/10 z-20">
+                <div v-show="mobileMenuOpen" class="md:hidden absolute top-full left-0 w-full bg-emerald-800/95 backdrop-blur-md px-4 pt-4 pb-6 space-y-3 shadow-2xl border-t border-white/10 z-40">
                     <button @click="switchTab('dashboard')" class="block w-full text-left py-3.5 px-5 rounded-2xl btn-glass" :class="{'active': currentTab === 'dashboard'}">Dashboard</button>
                     <button @click="switchTab('keluarga')" class="block w-full text-left py-3.5 px-5 rounded-2xl btn-glass" :class="{'active': currentTab === 'keluarga'}">Dana Keluarga</button>
                     <button @click="switchTab('umum')" class="block w-full text-left py-3.5 px-5 rounded-2xl btn-glass" :class="{'active': currentTab === 'umum'}">Dana Alumni & Umum</button>
